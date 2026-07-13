@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Приём заявок | Админ-панель</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #eef2f7;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 28px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        }
+        .header h1 { font-size: 1.6rem; font-weight: 600; color: #0b1a2e; display: flex; align-items: center; gap: 0.5rem; }
+        .header-actions { display: flex; gap: 0.8rem; align-items: center; }
+        .badge { background: #2563eb; color: white; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.8rem; font-weight: 500; }
+        .badge.discipline { background: #7c3aed; }
+        .badge.hr { background: #059669; }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid #dce3ed;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            color: #6b7f99;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-clear:hover { background: #fee9e7; border-color: #dc2626; color: #a13026; }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 0.6rem 1.8rem;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: white;
+            color: #4a5e78;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .tab:hover { background: #f0f4fa; }
+        .tab.active { background: #0b1a2e; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tab .count { background: rgba(255,255,255,0.2); padding: 0.05rem 0.6rem; border-radius: 40px; font-size: 0.7rem; margin-left: 0.3rem; }
+        .tab.active .count { background: rgba(255,255,255,0.2); }
+
+        .answers-grid { display: flex; flex-direction: column; gap: 1.2rem; }
+
+        .answer-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem 1.8rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+            border: 1px solid #e9edf4;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .answer-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.06); border-color: #c8d4e4; }
+
+        .card-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.5rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-id { font-weight: 600; color: #2563eb; background: #e9effa; padding: 0.1rem 0.9rem; border-radius: 40px; font-size: 0.75rem; }
+        .card-date { color: #6b7f99; font-size: 0.8rem; }
+
+        .card-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem 2rem;
+            align-items: center;
+        }
+        .card-preview .name { font-weight: 600; color: #0b1a2e; font-size: 1rem; }
+        .card-preview .ic { color: #4a5e78; font-size: 0.9rem; }
+        .card-preview .type-tag {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .type-tag.discipline { background: #ede9fe; color: #7c3aed; }
+        .type-tag.hr { background: #d1fae5; color: #059669; }
+
+        .expand-icon { margin-left: auto; color: #6b7f99; font-size: 0.8rem; background: #f0f4fa; padding: 0.1rem 0.9rem; border-radius: 40px; }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .status-badge.pending { background: #fef3c7; color: #b45309; }
+        .status-badge.approved { background: #d1fae5; color: #065f46; }
+        .status-badge.rejected { background: #fee9e7; color: #a13026; }
+
+        .card-detail {
+            display: none;
+            margin-top: 1.2rem;
+            padding-top: 1.2rem;
+            border-top: 1px dashed #dce3ed;
+            gap: 0.8rem;
+            flex-direction: column;
+        }
+        .card-detail.open { display: flex; }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 0.5rem 1rem;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #f0f4fa;
+        }
+        .detail-row .label { font-weight: 500; color: #4a5e78; font-size: 0.85rem; }
+        .detail-row .value { color: #0b1a2e; word-break: break-word; white-space: pre-wrap; }
+
+        .rating-chips { display: flex; flex-direction: column; gap: 0.4rem; }
+        .rating-chip {
+            background: #f0f4fa;
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .rating-chip .stars { color: #f59e0b; letter-spacing: 2px; font-size: 1rem; }
+        .rating-chip .label-text { min-width: 140px; color: #1a2a41; }
+        .rating-chip .score-text { color: #4a5e78; font-size: 0.8rem; }
+
+        .rating-divider { margin: 0.2rem 0 0.4rem 0; font-weight: 600; color: #0b1a2e; font-size: 0.9rem; padding: 0.3rem 0.5rem; background: rgba(37,99,235,0.06); border-radius: 40px; display: inline-block; }
+
+        .tag-yes { color: #0b5e2e; background: #e6f7e6; padding: 0.1rem 0.8rem; border-radius: 40px; font-weight: 600; font-size: 0.8rem; }
+        .tag-no { color: #a13026; background: #fee9e7; padding: 0.1rem 0.8rem; border-radius: 40px; font-weight: 600; font-size: 0.8rem; }
+
+        .empty-state { text-align: center; padding: 4rem 1rem; background: white; border-radius: 28px; color: #6b7f99; }
+        .empty-state span { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid #e9edf4;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            padding: 0.4rem 1.2rem;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-action.approve { background: #d1fae5; color: #065f46; }
+        .btn-action.approve:hover { background: #a7f3d0; }
+        .btn-action.reject { background: #fee9e7; color: #a13026; }
+        .btn-action.reject:hover { background: #fecaca; }
+        .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .footer { margin-top: 2rem; text-align: center; font-size: 0.75rem; color: #8b9db0; }
+
+        @media (max-width: 600px) {
+            .detail-row { grid-template-columns: 1fr; gap: 0.1rem; }
+            .header { padding: 1rem; }
+            .answer-card { padding: 1rem; }
+            .rating-chip { flex-wrap: wrap; gap: 0.2rem; }
+            .rating-chip .label-text { min-width: 100px; }
+            .tabs { gap: 0.3rem; }
+            .tab { padding: 0.4rem 1rem; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+<script>
+    // Запрашиваем пароль сразу при загрузке страницы
+    const password = prompt('🔒 Введите пароль для доступа к админ-панели:');
+    
+    // Пароль: 12345 (измените на свой!)
+    if (password !== '12345') {
+        // Если пароль неверный — показываем сообщение и блокируем страницу
+        document.body.innerHTML = `
+            <div style="
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                font-family: 'Inter', sans-serif;
+                background: #f0f4f9;
+                margin: 0;
+            ">
+                <div style="
+                    background: white;
+                    padding: 3rem 4rem;
+                    border-radius: 32px;
+                    text-align: center;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+                ">
+                    <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">🚫</h1>
+                    <h2 style="font-size: 1.5rem; color: #0b1a2e;">Доступ запрещён</h2>
+                    <p style="color: #6b7f99; margin-top: 0.3rem;">Неверный пароль</p>
+                </div>
+            </div>
+        `;
+        throw new Error('Access denied'); // Останавливаем выполнение скриптов
+    }
+</script>
+<div class="container">
+    <div class="header">
+        <h1>📋 Приём заявок</h1>
+        <div class="header-actions">
+            <button class="btn-clear" id="clearBtn">🗑️ Очистить всё</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-type="all">📋 Все заявки <span class="count" id="countAll">0</span></button>
+        <button class="tab" data-type="discipline">🏛️ Дисциплинарный инспектор <span class="count" id="countDiscipline">0</span></button>
+        <button class="tab" data-type="hr">👔 HR-менеджер <span class="count" id="countHr">0</span></button>
+    </div>
+
+    <div id="answersContainer" class="answers-grid"></div>
+
+    <div class="footer">🔒 Доступ только у администратора · все данные в localStorage</div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'survey_answers_all';
+    const container = document.getElementById('answersContainer');
+    let currentFilter = 'all';
+    let expandedCards = new Set();
+
+    function getAnswers() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch { return []; }
+    }
+
+    function saveAnswers(answers) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+        updateCounts();
+    }
+
+    function updateCounts() {
+        const answers = getAnswers();
+        const discipline = answers.filter(a => a.surveyType === 'discipline');
+        const hr = answers.filter(a => a.surveyType === 'hr');
+        document.getElementById('countAll').textContent = answers.length;
+        document.getElementById('countDiscipline').textContent = discipline.length;
+        document.getElementById('countHr').textContent = hr.length;
+    }
+
+    function updateStatus(id, status) {
+        const answers = getAnswers();
+        const idx = answers.findIndex(a => a.id === id);
+        if (idx !== -1) {
+            answers[idx].status = status;
+            saveAnswers(answers);
+            renderAnswers(currentFilter);
+        }
+    }
+
+    function renderAnswers(filter) {
+        const answers = getAnswers();
+        let filtered = answers;
+        if (filter === 'discipline') filtered = answers.filter(a => a.surveyType === 'discipline');
+        else if (filter === 'hr') filtered = answers.filter(a => a.surveyType === 'hr');
+
+        if (!filtered.length) {
+            container.innerHTML = `<div class="empty-state"><span>📭</span><p style="font-weight:500;">Нет заявок</p><p style="font-size:0.9rem;">Пока никто не заполнил опросник</p></div>`;
+            return;
+        }
+
+        const sorted = [...filtered].reverse();
+        let html = '';
+
+        sorted.forEach((item) => {
+            const isExpanded = expandedCards.has(item.id);
+            const statusText = item.status === 'approved' ? '✅ Одобрено' : item.status === 'rejected' ? '❌ Отказано' : '⏳ На рассмотрении';
+            const statusClass = item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending';
+            const typeLabel = item.surveyType === 'discipline' ? 'Дисциплинарный инспектор' : 'HR-менеджер';
+            const typeClass = item.surveyType === 'discipline' ? 'discipline' : 'hr';
+
+            const dateStr = item.date ? new Date(item.date).toLocaleString('ru-RU', {
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+            }) : 'неизвестно';
+
+            const ratings = item.ratings || {};
+            const ratingLabels = {
+                d_r1: 'Адекватность', d_r2: 'Стрессоустойчивость', d_r3: 'Знание правил сервера',
+                d_r4: 'Любовь к своей работе', d_r5: 'Целеустремленность',
+                d_r6: 'Конституция', d_r7: 'Уголовный кодекс', d_r8: 'Этический кодекс',
+                d_r9: 'Устав Goverment', d_r10: 'Устав Секретариата', d_r11: 'Трудовой Кодекс',
+                h_r1: 'Адекватность', h_r2: 'Стрессоустойчивость', h_r3: 'Знание правил сервера',
+                h_r4: 'Любовь к своей работе', h_r5: 'Целеустремленность',
+                h_r6: 'Конституция', h_r7: 'Уголовный кодекс', h_r8: 'Этический кодекс',
+                h_r9: 'Устав Goverment', h_r10: 'Устав Секретариата', h_r11: 'Трудовой Кодекс',
+                h_r12: 'Информация о лицензиях'
+            };
+            const selfKeys = ['r1', 'r2', 'r3', 'r4', 'r5'];
+            const docKeys = ['r6', 'r7', 'r8', 'r9', 'r10', 'r11', 'r12'];
+
+            function renderRatingGroup(keys, groupName) {
+                const items = keys.filter(k => ratings[`${item.surveyType === 'discipline' ? 'd_' : 'h_'}${k}`] !== undefined);
+                if (!items.length) return '';
+                const chips = items.map(k => {
+                    const key = `${item.surveyType === 'discipline' ? 'd_' : 'h_'}${k}`;
+                    const val = ratings[key] || 0;
+                    const stars = '★'.repeat(val) + '☆'.repeat(5 - val);
+                    const label = ratingLabels[key] || k;
+                    return `<div class="rating-chip"><span class="label-text">${label}</span><span class="stars">${stars}</span><span class="score-text">(${val}/5)</span></div>`;
+                }).join('');
+                return `<div class="rating-divider">${groupName}</div>${chips}`;
+            }
+
+            // === Детали для Дисциплинарного ===
+            let extraDetails = '';
+            if (item.surveyType === 'discipline') {
+                const expTag = item.experience === 'yes' ? '<span class="tag-yes">✅ Да</span>' : item.experience === 'no' ? '<span class="tag-no">❌ Нет</span>' : '—';
+                const expDetail = item.experience === 'yes' && item.experienceDetail ? item.experienceDetail : '—';
+                const examTag = item.examMoney === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
+                extraDetails = `
+                    <div class="detail-row"><span class="label">Имеется ли у вас опыт работы на похожих должностях?</span><span class="value">${expTag}</span></div>
+                    ${item.experience === 'yes' ? `<div class="detail-row"><span class="label">Где и кем вы работали?</span><span class="value">${expDetail}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Допустимо ли брать деньги за сдачу экзаменов (именно в Аппарате Правительства)?</span><span class="value">${examTag}</span></div>
+                    ${item.examMoney === 'no' && item.situation3 ? `<div class="detail-row"><span class="label">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</span><span class="value">${item.situation3}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать?</span><span class="value">${item.situation1 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Вас оскорбили в Дискорде, что вы будете делать?</span><span class="value">${item.situation2 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Пару слов о себе</span><span class="value">${item.about || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Ради чего Вы хотите стать Дисциплинарным инспектором?</span><span class="value">${item.motivation || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Как вы думаете, какими качествами должен обладать Дисциплинарный инспектор?</span><span class="value">${item.qualities || '—'}</span></div>
+                `;
+            } else if (item.surveyType === 'hr') {
+                const expTag = item.experience === 'yes' ? '<span class="tag-yes">✅ Да</span>' : item.experience === 'no' ? '<span class="tag-no">❌ Нет</span>' : '—';
+                const expDetail = item.experience === 'yes' && item.experienceDetail ? item.experienceDetail : '—';
+                const examTag = item.examMoney === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
+                const traineeTag = item.trainee === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
+                extraDetails = `
+                    <div class="detail-row"><span class="label">Имеется ли у Вас опыт HR-менеджера или в других фракциях на похожих должностях?</span><span class="value">${expTag}</span></div>
+                    ${item.experience === 'yes' ? `<div class="detail-row"><span class="label">Где и кем вы работали?</span><span class="value">${expDetail}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Допустимо ли брать деньги за сдачу экзаменов (именно в Аппарате Правительства)?</span><span class="value">${examTag}</span></div>
+                    ${item.examMoney === 'no' && item.situationColleague ? `<div class="detail-row"><span class="label">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</span><span class="value">${item.situationColleague}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Готовы ли вы уделять время стажерам, которые требуют особого внимания?</span><span class="value">${traineeTag}</span></div>
+                    ${item.trainee === 'yes' && item.traineeDetail ? `<div class="detail-row"><span class="label">Молодой стажер никак не может сдать первый экзамен на секретаря. Расскажите, как вы сможете ему помочь?</span><span class="value">${item.traineeDetail}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать?</span><span class="value">${item.situation1 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Как вы относитесь к индивидуальным наборам? (Раздача листовок, агитируя отдел АП)</span><span class="value">${item.individual || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Вас оскорбили в Дискорде, что вы будете делать?</span><span class="value">${item.situation2 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Пару слов о себе</span><span class="value">${item.about || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Ради чего Вы хотите стать HR-менеджером?</span><span class="value">${item.motivation || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Как Вы думаете, чем занимается HR-менеджер?</span><span class="value">${item.hrDuties || '—'}</span></div>
+                `;
+            }
+
+            const ratingHtml = renderRatingGroup(selfKeys, '— Оцените себя —') + renderRatingGroup(docKeys, '— Знание законодательной базы —');
+
+            html += `
+                <div class="answer-card" data-id="${item.id}">
+                    <div class="card-header">
+                        <span class="card-id">#${item.id}</span>
+                        <span class="card-date">${dateStr}</span>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="card-preview">
+                        <span class="name">👤 ${item.q2 || '—'}</span>
+                        <span class="ic">🎭 ${item.q1 || '—'}</span>
+                        <span class="type-tag ${typeClass}">${typeLabel}</span>
+                        <span class="expand-icon">${isExpanded ? '▼ свернуть' : '▶ развернуть'}</span>
+                    </div>
+                    <div class="card-detail ${isExpanded ? 'open' : ''}">
+                        <div class="detail-row"><span class="label">Ваше Имя Фамилия (IC)</span><span class="value">${item.q1 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваше Имя (OOC)</span><span class="value">${item.q2 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш возраст (OOC)</span><span class="value">${item.q3 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш игровой онлайн (OOC)</span><span class="value">${item.q4 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш прайм-тайм</span><span class="value">${item.q5 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш часовой пояс</span><span class="value">${item.q6 || '—'}</span></div>
+                        ${extraDetails}
+                        <div class="detail-row"><span class="label">⭐ Рейтинги</span><div class="rating-chips">${ratingHtml}</div></div>
+                        <div class="action-buttons">
+                            <button class="btn-action approve" data-id="${item.id}" ${item.status === 'approved' ? 'disabled' : ''}>✅ Одобрено</button>
+                            <button class="btn-action reject" data-id="${item.id}" ${item.status === 'rejected' ? 'disabled' : ''}>❌ Отказано</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        document.querySelectorAll('.answer-card').forEach(card => {
+            const id = parseInt(card.dataset.id);
+            const detail = card.querySelector('.card-detail');
+            const icon = card.querySelector('.expand-icon');
+            
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('.action-buttons') || e.target.closest('.btn-action')) return;
+                const isOpen = detail.classList.contains('open');
+                if (isOpen) {
+                    detail.classList.remove('open');
+                    if (icon) icon.textContent = '▶ развернуть';
+                    expandedCards.delete(id);
+                } else {
+                    detail.classList.add('open');
+                    if (icon) icon.textContent = '▼ свернуть';
+                    expandedCards.add(id);
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-action').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const id = parseInt(this.dataset.id);
+                if (this.classList.contains('approve')) {
+                    updateStatus(id, 'approved');
+                } else {
+                    updateStatus(id, 'rejected');
+                }
+            });
+        });
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.type;
+            renderAnswers(currentFilter);
+        });
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        if (confirm('Удалить все ответы?')) {
+            saveAnswers([]);
+            expandedCards.clear();
+            renderAnswers(currentFilter);
+        }
+    });
+
+    updateCounts();
+    renderAnswers('all');
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            renderAnswers(currentFilter);
+        }
+    });
+</script>
+</body>
+</html>
