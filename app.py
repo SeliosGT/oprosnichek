@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
@@ -6,18 +6,17 @@ import json
 import os
 from datetime import datetime
 
-app = Flask(__name__, static_folder='.')
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
 # --- Подключение к базе данных ---
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
-    # Для локального тестирования (можно оставить или удалить)
+    # Для локального тестирования
     DATABASE_URL = "postgresql://user:pass@localhost:5432/surveys"
 
 def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+    return psycopg2.connect(DATABASE_URL)
 
 # --- Инициализация базы данных ---
 def init_db():
@@ -39,7 +38,6 @@ def init_db():
     except Exception as e:
         print(f"⚠️ Ошибка инициализации БД: {e}")
 
-# Вызываем при старте
 init_db()
 
 # ============================================
@@ -69,7 +67,7 @@ def submit_answer():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --- Получение всех ответов (для админки) ---
+# --- Получение всех ответов ---
 @app.route('/api/answers', methods=['GET'])
 def get_answers():
     try:
@@ -101,7 +99,7 @@ def get_answers():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- Обновление статуса (одобрено/отказано) ---
+# --- Обновление статуса ---
 @app.route('/api/update-status', methods=['POST'])
 def update_status():
     try:
@@ -120,7 +118,7 @@ def update_status():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --- Удаление всех ответов (для очистки) ---
+# --- Удаление всех ответов ---
 @app.route('/api/clear-all', methods=['POST'])
 def clear_all():
     try:
@@ -138,7 +136,7 @@ def clear_all():
 # ===== ОТДАЧА СТАТИЧЕСКИХ ФАЙЛОВ =====
 # ============================================
 
-# Главная страница со списком опросников
+# Главная страница
 @app.route('/')
 def index():
     return '''
@@ -214,15 +212,26 @@ def index():
     </html>
     '''
 
-# Отдаём все остальные HTML-файлы
+# Отдаём HTML-файлы и картинки
 @app.route('/<path:path>')
 def serve_static(path):
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
-    except FileNotFoundError:
-        return "Файл не найден", 404
+    # Проверяем, существует ли файл
+    if os.path.exists(path):
+        # Определяем MIME-тип
+        if path.endswith('.html'):
+            return send_from_directory('.', path, mimetype='text/html; charset=utf-8')
+        elif path.endswith('.png'):
+            return send_from_directory('.', path, mimetype='image/png')
+        elif path.endswith('.jpg') or path.endswith('.jpeg'):
+            return send_from_directory('.', path, mimetype='image/jpeg')
+        elif path.endswith('.css'):
+            return send_from_directory('.', path, mimetype='text/css')
+        elif path.endswith('.js'):
+            return send_from_directory('.', path, mimetype='application/javascript')
+        else:
+            return send_from_directory('.', path)
+    else:
+        return f"Файл не найден: {path}", 404
 
 # ============================================
 # ===== ЗАПУСК =====
