@@ -165,6 +165,7 @@
 
         .empty-state { text-align: center; padding: 4rem 1rem; background: white; border-radius: 28px; color: #6b7f99; }
         .empty-state span { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
+        .empty-state .error { color: #dc2626; }
 
         .action-buttons {
             display: flex;
@@ -206,39 +207,29 @@
     </style>
 </head>
 <body>
+
+<!-- ============================================ -->
+<!-- 🔐 ЗАЩИТА ПАРОЛЕМ (САМОЕ НАЧАЛО)              -->
+<!-- ============================================ -->
 <script>
-    // Запрашиваем пароль сразу при загрузке страницы
     const password = prompt('🔒 Введите пароль для доступа к админ-панели:');
-    
-    // Пароль: 12345 (измените на свой!)
-    if (password !== '12345') {
-        // Если пароль неверный — показываем сообщение и блокируем страницу
+    if (password !== '12345') {  // ← ЗАМЕНИТЕ '12345' НА СВОЙ ПАРОЛЬ!
         document.body.innerHTML = `
-            <div style="
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                font-family: 'Inter', sans-serif;
-                background: #f0f4f9;
-                margin: 0;
-            ">
-                <div style="
-                    background: white;
-                    padding: 3rem 4rem;
-                    border-radius: 32px;
-                    text-align: center;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-                ">
-                    <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">🚫</h1>
-                    <h2 style="font-size: 1.5rem; color: #0b1a2e;">Доступ запрещён</h2>
-                    <p style="color: #6b7f99; margin-top: 0.3rem;">Неверный пароль</p>
+            <div style="display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f9;">
+                <div style="background:white;padding:3rem 4rem;border-radius:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.08);">
+                    <h1 style="font-size:3rem;margin-bottom:0.5rem;">🚫</h1>
+                    <h2 style="font-size:1.5rem;color:#0b1a2e;">Доступ запрещён</h2>
+                    <p style="color:#6b7f99;margin-top:0.3rem;">Неверный пароль</p>
                 </div>
             </div>
         `;
-        throw new Error('Access denied'); // Останавливаем выполнение скриптов
+        throw new Error('Access denied');
     }
 </script>
+
+<!-- ============================================ -->
+<!-- ОСНОВНАЯ ЧАСТЬ СТРАНИЦЫ                       -->
+<!-- ============================================ -->
 <div class="container">
     <div class="header">
         <h1>📋 Приём заявок</h1>
@@ -253,31 +244,44 @@
         <button class="tab" data-type="hr">👔 HR-менеджер <span class="count" id="countHr">0</span></button>
     </div>
 
-    <div id="answersContainer" class="answers-grid"></div>
+    <div id="answersContainer" class="answers-grid">
+        <div class="empty-state"><span>⏳</span><p>Загрузка...</p></div>
+    </div>
 
-    <div class="footer">🔒 Доступ только у администратора · все данные в localStorage</div>
+    <div class="footer">🔒 Доступ только у администратора · все данные в базе данных</div>
 </div>
 
 <script>
-    const STORAGE_KEY = 'survey_answers_all';
     const container = document.getElementById('answersContainer');
     let currentFilter = 'all';
     let expandedCards = new Set();
 
-    function getAnswers() {
-        try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        } catch { return []; }
+    // ============================================
+    // ЗАГРУЗКА ДАННЫХ С СЕРВЕРА
+    // ============================================
+    function loadAnswersFromServer() {
+        container.innerHTML = `<div class="empty-state"><span>⏳</span><p>Загрузка...</p></div>`;
+        
+        fetch('/api/answers?type=' + currentFilter)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    container.innerHTML = `<div class="empty-state"><span>⚠️</span><p class="error">Ошибка: ${data.error}</p></div>`;
+                    return;
+                }
+                renderAnswers(data);
+                updateCounts(data);
+            })
+            .catch((err) => {
+                container.innerHTML = `<div class="empty-state"><span>⚠️</span><p class="error">Ошибка соединения с сервером</p><p style="font-size:0.8rem;margin-top:0.5rem;">${err.message}</p></div>`;
+            });
     }
 
-    function saveAnswers(answers) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
-        updateCounts();
-    }
-
-    function updateCounts() {
-        const answers = getAnswers();
+    // ============================================
+    // ОБНОВЛЕНИЕ СЧЁТЧИКОВ
+    // ============================================
+    function updateCounts(answers) {
+        if (!answers) return;
         const discipline = answers.filter(a => a.surveyType === 'discipline');
         const hr = answers.filter(a => a.surveyType === 'hr');
         document.getElementById('countAll').textContent = answers.length;
@@ -285,42 +289,68 @@
         document.getElementById('countHr').textContent = hr.length;
     }
 
+    // ============================================
+    // ОБНОВЛЕНИЕ СТАТУСА
+    // ============================================
     function updateStatus(id, status) {
-        const answers = getAnswers();
-        const idx = answers.findIndex(a => a.id === id);
-        if (idx !== -1) {
-            answers[idx].status = status;
-            saveAnswers(answers);
-            renderAnswers(currentFilter);
-        }
+        fetch('/api/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, status: status })
+        })
+        .then(res => res.json())
+        .then(() => {
+            loadAnswersFromServer();
+        })
+        .catch(() => {
+            alert('❌ Ошибка при обновлении статуса!');
+        });
     }
 
-    function renderAnswers(filter) {
-        const answers = getAnswers();
-        let filtered = answers;
-        if (filter === 'discipline') filtered = answers.filter(a => a.surveyType === 'discipline');
-        else if (filter === 'hr') filtered = answers.filter(a => a.surveyType === 'hr');
+    // ============================================
+    // ОЧИСТКА ВСЕХ ОТВЕТОВ
+    // ============================================
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        if (confirm('⚠️ Удалить все ответы навсегда?')) {
+            fetch('/api/clear-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(() => {
+                loadAnswersFromServer();
+            })
+            .catch(() => {
+                alert('❌ Ошибка при очистке!');
+            });
+        }
+    });
 
-        if (!filtered.length) {
+    // ============================================
+    // ОТРИСОВКА ОТВЕТОВ
+    // ============================================
+    function renderAnswers(answers) {
+        if (!answers || !answers.length) {
             container.innerHTML = `<div class="empty-state"><span>📭</span><p style="font-weight:500;">Нет заявок</p><p style="font-size:0.9rem;">Пока никто не заполнил опросник</p></div>`;
             return;
         }
 
-        const sorted = [...filtered].reverse();
+        const sorted = [...answers];
         let html = '';
 
         sorted.forEach((item) => {
             const isExpanded = expandedCards.has(item.id);
+            const answer = item.answer || {};
+            
             const statusText = item.status === 'approved' ? '✅ Одобрено' : item.status === 'rejected' ? '❌ Отказано' : '⏳ На рассмотрении';
             const statusClass = item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending';
             const typeLabel = item.surveyType === 'discipline' ? 'Дисциплинарный инспектор' : 'HR-менеджер';
             const typeClass = item.surveyType === 'discipline' ? 'discipline' : 'hr';
 
-            const dateStr = item.date ? new Date(item.date).toLocaleString('ru-RU', {
+            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleString('ru-RU', {
                 day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
             }) : 'неизвестно';
 
-            const ratings = item.ratings || {};
+            const ratings = answer.ratings || {};
             const ratingLabels = {
                 d_r1: 'Адекватность', d_r2: 'Стрессоустойчивость', d_r3: 'Знание правил сервера',
                 d_r4: 'Любовь к своей работе', d_r5: 'Целеустремленность',
@@ -336,10 +366,11 @@
             const docKeys = ['r6', 'r7', 'r8', 'r9', 'r10', 'r11', 'r12'];
 
             function renderRatingGroup(keys, groupName) {
-                const items = keys.filter(k => ratings[`${item.surveyType === 'discipline' ? 'd_' : 'h_'}${k}`] !== undefined);
+                const prefix = item.surveyType === 'discipline' ? 'd_' : 'h_';
+                const items = keys.filter(k => ratings[`${prefix}${k}`] !== undefined);
                 if (!items.length) return '';
                 const chips = items.map(k => {
-                    const key = `${item.surveyType === 'discipline' ? 'd_' : 'h_'}${k}`;
+                    const key = `${prefix}${k}`;
                     const val = ratings[key] || 0;
                     const stars = '★'.repeat(val) + '☆'.repeat(5 - val);
                     const label = ratingLabels[key] || k;
@@ -351,38 +382,38 @@
             // === Детали для Дисциплинарного ===
             let extraDetails = '';
             if (item.surveyType === 'discipline') {
-                const expTag = item.experience === 'yes' ? '<span class="tag-yes">✅ Да</span>' : item.experience === 'no' ? '<span class="tag-no">❌ Нет</span>' : '—';
-                const expDetail = item.experience === 'yes' && item.experienceDetail ? item.experienceDetail : '—';
-                const examTag = item.examMoney === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
+                const expTag = answer.experience === 'yes' ? '<span class="tag-yes">✅ Да</span>' : answer.experience === 'no' ? '<span class="tag-no">❌ Нет</span>' : '—';
+                const expDetail = answer.experience === 'yes' && answer.experienceDetail ? answer.experienceDetail : '—';
+                const examTag = answer.examMoney === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
                 extraDetails = `
                     <div class="detail-row"><span class="label">Имеется ли у вас опыт работы на похожих должностях?</span><span class="value">${expTag}</span></div>
-                    ${item.experience === 'yes' ? `<div class="detail-row"><span class="label">Где и кем вы работали?</span><span class="value">${expDetail}</span></div>` : ''}
+                    ${answer.experience === 'yes' ? `<div class="detail-row"><span class="label">Где и кем вы работали?</span><span class="value">${expDetail}</span></div>` : ''}
                     <div class="detail-row"><span class="label">Допустимо ли брать деньги за сдачу экзаменов (именно в Аппарате Правительства)?</span><span class="value">${examTag}</span></div>
-                    ${item.examMoney === 'no' && item.situation3 ? `<div class="detail-row"><span class="label">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</span><span class="value">${item.situation3}</span></div>` : ''}
-                    <div class="detail-row"><span class="label">Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать?</span><span class="value">${item.situation1 || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Вас оскорбили в Дискорде, что вы будете делать?</span><span class="value">${item.situation2 || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Пару слов о себе</span><span class="value">${item.about || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Ради чего Вы хотите стать Дисциплинарным инспектором?</span><span class="value">${item.motivation || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Как вы думаете, какими качествами должен обладать Дисциплинарный инспектор?</span><span class="value">${item.qualities || '—'}</span></div>
+                    ${answer.examMoney === 'no' && answer.situation3 ? `<div class="detail-row"><span class="label">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</span><span class="value">${answer.situation3}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать?</span><span class="value">${answer.situation1 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Вас оскорбили в Дискорде, что вы будете делать?</span><span class="value">${answer.situation2 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Пару слов о себе</span><span class="value">${answer.about || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Ради чего Вы хотите стать Дисциплинарным инспектором?</span><span class="value">${answer.motivation || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Как вы думаете, какими качествами должен обладать Дисциплинарный инспектор?</span><span class="value">${answer.qualities || '—'}</span></div>
                 `;
             } else if (item.surveyType === 'hr') {
-                const expTag = item.experience === 'yes' ? '<span class="tag-yes">✅ Да</span>' : item.experience === 'no' ? '<span class="tag-no">❌ Нет</span>' : '—';
-                const expDetail = item.experience === 'yes' && item.experienceDetail ? item.experienceDetail : '—';
-                const examTag = item.examMoney === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
-                const traineeTag = item.trainee === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
+                const expTag = answer.experience === 'yes' ? '<span class="tag-yes">✅ Да</span>' : answer.experience === 'no' ? '<span class="tag-no">❌ Нет</span>' : '—';
+                const expDetail = answer.experience === 'yes' && answer.experienceDetail ? answer.experienceDetail : '—';
+                const examTag = answer.examMoney === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
+                const traineeTag = answer.trainee === 'yes' ? '<span class="tag-yes">✅ Да</span>' : '<span class="tag-no">❌ Нет</span>';
                 extraDetails = `
                     <div class="detail-row"><span class="label">Имеется ли у Вас опыт HR-менеджера или в других фракциях на похожих должностях?</span><span class="value">${expTag}</span></div>
-                    ${item.experience === 'yes' ? `<div class="detail-row"><span class="label">Где и кем вы работали?</span><span class="value">${expDetail}</span></div>` : ''}
+                    ${answer.experience === 'yes' ? `<div class="detail-row"><span class="label">Где и кем вы работали?</span><span class="value">${expDetail}</span></div>` : ''}
                     <div class="detail-row"><span class="label">Допустимо ли брать деньги за сдачу экзаменов (именно в Аппарате Правительства)?</span><span class="value">${examTag}</span></div>
-                    ${item.examMoney === 'no' && item.situationColleague ? `<div class="detail-row"><span class="label">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</span><span class="value">${item.situationColleague}</span></div>` : ''}
+                    ${answer.examMoney === 'no' && answer.situationColleague ? `<div class="detail-row"><span class="label">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</span><span class="value">${answer.situationColleague}</span></div>` : ''}
                     <div class="detail-row"><span class="label">Готовы ли вы уделять время стажерам, которые требуют особого внимания?</span><span class="value">${traineeTag}</span></div>
-                    ${item.trainee === 'yes' && item.traineeDetail ? `<div class="detail-row"><span class="label">Молодой стажер никак не может сдать первый экзамен на секретаря. Расскажите, как вы сможете ему помочь?</span><span class="value">${item.traineeDetail}</span></div>` : ''}
-                    <div class="detail-row"><span class="label">Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать?</span><span class="value">${item.situation1 || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Как вы относитесь к индивидуальным наборам? (Раздача листовок, агитируя отдел АП)</span><span class="value">${item.individual || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Вас оскорбили в Дискорде, что вы будете делать?</span><span class="value">${item.situation2 || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Пару слов о себе</span><span class="value">${item.about || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Ради чего Вы хотите стать HR-менеджером?</span><span class="value">${item.motivation || '—'}</span></div>
-                    <div class="detail-row"><span class="label">Как Вы думаете, чем занимается HR-менеджер?</span><span class="value">${item.hrDuties || '—'}</span></div>
+                    ${answer.trainee === 'yes' && answer.traineeDetail ? `<div class="detail-row"><span class="label">Молодой стажер никак не может сдать первый экзамен на секретаря. Расскажите, как вы сможете ему помочь?</span><span class="value">${answer.traineeDetail}</span></div>` : ''}
+                    <div class="detail-row"><span class="label">Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать?</span><span class="value">${answer.situation1 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Как вы относитесь к индивидуальным наборам? (Раздача листовок, агитируя отдел АП)</span><span class="value">${answer.individual || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Вас оскорбили в Дискорде, что вы будете делать?</span><span class="value">${answer.situation2 || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Пару слов о себе</span><span class="value">${answer.about || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Ради чего Вы хотите стать HR-менеджером?</span><span class="value">${answer.motivation || '—'}</span></div>
+                    <div class="detail-row"><span class="label">Как Вы думаете, чем занимается HR-менеджер?</span><span class="value">${answer.hrDuties || '—'}</span></div>
                 `;
             }
 
@@ -396,18 +427,18 @@
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
                     <div class="card-preview">
-                        <span class="name">👤 ${item.q2 || '—'}</span>
-                        <span class="ic">🎭 ${item.q1 || '—'}</span>
+                        <span class="name">👤 ${answer.q2 || '—'}</span>
+                        <span class="ic">🎭 ${answer.q1 || '—'}</span>
                         <span class="type-tag ${typeClass}">${typeLabel}</span>
                         <span class="expand-icon">${isExpanded ? '▼ свернуть' : '▶ развернуть'}</span>
                     </div>
                     <div class="card-detail ${isExpanded ? 'open' : ''}">
-                        <div class="detail-row"><span class="label">Ваше Имя Фамилия (IC)</span><span class="value">${item.q1 || '—'}</span></div>
-                        <div class="detail-row"><span class="label">Ваше Имя (OOC)</span><span class="value">${item.q2 || '—'}</span></div>
-                        <div class="detail-row"><span class="label">Ваш возраст (OOC)</span><span class="value">${item.q3 || '—'}</span></div>
-                        <div class="detail-row"><span class="label">Ваш игровой онлайн (OOC)</span><span class="value">${item.q4 || '—'}</span></div>
-                        <div class="detail-row"><span class="label">Ваш прайм-тайм</span><span class="value">${item.q5 || '—'}</span></div>
-                        <div class="detail-row"><span class="label">Ваш часовой пояс</span><span class="value">${item.q6 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваше Имя Фамилия (IC)</span><span class="value">${answer.q1 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваше Имя (OOC)</span><span class="value">${answer.q2 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш возраст (OOC)</span><span class="value">${answer.q3 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш игровой онлайн (OOC)</span><span class="value">${answer.q4 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш прайм-тайм</span><span class="value">${answer.q5 || '—'}</span></div>
+                        <div class="detail-row"><span class="label">Ваш часовой пояс</span><span class="value">${answer.q6 || '—'}</span></div>
                         ${extraDetails}
                         <div class="detail-row"><span class="label">⭐ Рейтинги</span><div class="rating-chips">${ratingHtml}</div></div>
                         <div class="action-buttons">
@@ -421,6 +452,7 @@
 
         container.innerHTML = html;
 
+        // === Обработка кликов по карточкам ===
         document.querySelectorAll('.answer-card').forEach(card => {
             const id = parseInt(card.dataset.id);
             const detail = card.querySelector('.card-detail');
@@ -441,6 +473,7 @@
             });
         });
 
+        // === Обработка кнопок действий ===
         document.querySelectorAll('.btn-action').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -454,29 +487,27 @@
         });
     }
 
+    // ============================================
+    // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+    // ============================================
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             currentFilter = this.dataset.type;
-            renderAnswers(currentFilter);
+            loadAnswersFromServer();
         });
     });
 
-    document.getElementById('clearBtn').addEventListener('click', function() {
-        if (confirm('Удалить все ответы?')) {
-            saveAnswers([]);
-            expandedCards.clear();
-            renderAnswers(currentFilter);
-        }
-    });
+    // ============================================
+    // ЗАПУСК
+    // ============================================
+    loadAnswersFromServer();
 
-    updateCounts();
-    renderAnswers('all');
-
+    // Обновляем при возврате на вкладку
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-            renderAnswers(currentFilter);
+            loadAnswersFromServer();
         }
     });
 </script>
