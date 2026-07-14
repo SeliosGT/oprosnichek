@@ -6,7 +6,7 @@
     <title>Анкета | Дисциплинарный инспектор</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -25,7 +25,7 @@
         .container {
             max-width: 780px;
             width: 100%;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.92);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 32px;
@@ -33,12 +33,42 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.2);
             position: relative;
+            transition: min-height 0.4s ease;
+            min-height: 400px;
         }
-        h1 { font-size: 1.8rem; font-weight: 600; margin-bottom: 0.2rem; color: #0b1a2e; }
+        h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.2rem; color: #0b1a2e; }
         .survey-type { font-size: 0.9rem; color: #4a5e78; margin-bottom: 1.8rem; border-left: 4px solid #2563eb; padding-left: 1rem; background: rgba(37,99,235,0.06); padding: 0.6rem 1rem; border-radius: 0 12px 12px 0; }
-        .section { margin-bottom: 2.5rem; }
-        .section-title { font-weight: 600; font-size: 1.2rem; color: #0b1a2e; margin-bottom: 1.2rem; padding-bottom: 0.4rem; border-bottom: 2px solid rgba(0,0,0,0.08); display: flex; align-items: center; gap: 0.5rem; }
-        .section-title span { background: #2563eb; color: white; font-size: 0.7rem; padding: 0.1rem 0.7rem; border-radius: 40px; }
+
+        /* ——— Шаги ——— */
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .step-dot {
+            width: 40px;
+            height: 4px;
+            border-radius: 4px;
+            background: #dce3ed;
+            transition: 0.3s;
+        }
+        .step-dot.active { background: #2563eb; }
+        .step-dot.done { background: #059669; }
+
+        .step {
+            display: none;
+            animation: fadeStep 0.3s ease;
+        }
+        .step.active { display: block; }
+        @keyframes fadeStep {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title { font-weight: 600; font-size: 1.2rem; color: #0b1a2e; margin-bottom: 1.2rem; padding-bottom: 0.4rem; border-bottom: 2px solid rgba(0,0,0,0.08); display: flex; align-items: center; gap: 0.5rem; }
+        .step-title span { background: #2563eb; color: white; font-size: 0.7rem; padding: 0.1rem 0.7rem; border-radius: 40px; }
+
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; color: #1a2a41; }
         .form-group label .required { color: #dc2626; margin-left: 2px; }
@@ -55,6 +85,7 @@
         .form-group textarea { resize: vertical; min-height: 50px; overflow: hidden; transition: height 0.15s ease; }
         .form-group textarea.auto-expand { resize: none; }
 
+        /* ——— Рейтинги ——— */
         .rating-group { margin-bottom: 1.8rem; padding: 0.8rem 1rem; background: rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); transition: 0.3s; }
         .rating-group:hover { border-color: rgba(0,0,0,0.15); background: rgba(255,255,255,0.7); }
         .rating-label { font-weight: 500; font-size: 0.95rem; color: #1a2a41; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center; }
@@ -82,6 +113,7 @@
         .star-btn:hover { transform: scale(1.1); }
         .star-btn:active { transform: scale(0.9); }
 
+        /* ——— Радио ——— */
         .radio-group { display: flex; gap: 1.5rem; margin-top: 0.3rem; flex-wrap: wrap; }
         .radio-group label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; font-size: 0.95rem; color: #1a2a41; cursor: pointer; }
         .radio-group input[type="radio"] { width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer; }
@@ -92,15 +124,127 @@
         .conditional-field textarea { width: 100%; padding: 0.8rem 1rem; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 14px; font-size: 0.95rem; font-family: inherit; resize: vertical; min-height: 60px; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); overflow: hidden; transition: height 0.15s ease; }
         .conditional-field textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.15); background: rgba(255,255,255,0.9); }
 
-        .btn-submit { background: #0b1a2e; color: white; border: none; font-weight: 600; font-size: 1.05rem; padding: 1rem 2.5rem; border-radius: 60px; cursor: pointer; width: 100%; transition: 0.2s; margin-top: 0.5rem; }
-        .btn-submit:hover { background: #1a3050; transform: scale(1.01); }
-        .btn-submit:active { transform: scale(0.98); }
+        /* ——— Рисовалка ——— */
+        .drawing-area {
+            margin: 1rem 0 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .drawing-area .draw-label {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #1a2a41;
+            text-align: center;
+        }
+        .drawing-area .draw-label small {
+            font-weight: 400;
+            color: #6b7f99;
+            font-size: 0.85rem;
+        }
+        .drawing-canvas-wrapper {
+            position: relative;
+            border: 2px solid rgba(0,0,0,0.12);
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .drawing-canvas-wrapper canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1/1;
+            max-width: 400px;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        .drawing-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+            align-items: center;
+        }
+        .drawing-tools .color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .drawing-tools .color-btn:hover { transform: scale(1.1); }
+        .drawing-tools .color-btn.active { border-color: #0b1a2e; box-shadow: 0 0 0 2px white, 0 0 0 4px #0b1a2e; }
+        .drawing-tools .clear-btn {
+            padding: 0.3rem 1rem;
+            border: none;
+            border-radius: 40px;
+            background: #fee9e7;
+            color: #a13026;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .drawing-tools .clear-btn:hover { background: #fecaca; }
+        .drawing-tools .size-slider {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            color: #4a5e78;
+        }
+        .drawing-tools .size-slider input[type="range"] {
+            width: 60px;
+            accent-color: #2563eb;
+        }
 
+        /* ——— Навигация ——— */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .nav-buttons .btn {
+            padding: 0.7rem 2rem;
+            border: none;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-buttons .btn-back {
+            background: #f0f4fa;
+            color: #4a5e78;
+        }
+        .nav-buttons .btn-back:hover { background: #e2e8f0; }
+        .nav-buttons .btn-next {
+            background: #0b1a2e;
+            color: white;
+        }
+        .nav-buttons .btn-next:hover { background: #1a3050; transform: scale(1.01); }
+        .nav-buttons .btn-submit {
+            background: #059669;
+            color: white;
+        }
+        .nav-buttons .btn-submit:hover { background: #047857; transform: scale(1.01); }
+        .nav-buttons .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ——— Окно успешной отправки ——— */
         .success-overlay {
             display: none;
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.92);
+            background: rgba(255,255,255,0.95);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 32px;
@@ -117,8 +261,16 @@
         .success-overlay .icon { font-size: 4rem; margin-bottom: 0.5rem; }
         .success-overlay .title { font-size: 2rem; font-weight: 700; color: #0b1a2e; margin-bottom: 0.3rem; }
         .success-overlay .subtitle { font-size: 1.1rem; color: #4a5e78; }
+        .success-overlay .gift-note {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #4a5e78;
+            background: rgba(37,99,235,0.06);
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+        }
         .success-overlay .close-btn {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             background: #0b1a2e;
             color: white;
             border: none;
@@ -136,27 +288,41 @@
         .toast.error { background: rgba(254,233,231,0.95); color: #a13026; display: block; }
         .footer-note { margin-top: 2rem; font-size: 0.75rem; color: rgba(0,0,0,0.5); text-align: center; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 1.5rem; }
 
-        @media (max-width: 600px) { .container { padding: 1.5rem; } body { padding: 1rem; } .success-overlay .title { font-size: 1.5rem; } }
+        @media (max-width: 600px) { .container { padding: 1.5rem; } body { padding: 1rem; } .success-overlay .title { font-size: 1.5rem; } .nav-buttons .btn { padding: 0.6rem 1.2rem; font-size: 0.85rem; } }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container" id="mainContainer">
     <h1>📋 Анкета Дисциплинарного инспектора</h1>
     <div class="survey-type">🏛️ Аппарат Правительства · Дисциплинарный отдел</div>
 
+    <!-- Индикаторы шагов -->
+    <div class="step-indicators">
+        <div class="step-dot active" data-step="1"></div>
+        <div class="step-dot" data-step="2"></div>
+        <div class="step-dot" data-step="3"></div>
+    </div>
+
     <form id="surveyForm1" data-survey-type="discipline">
-        <div class="section">
-            <div class="section-title">📝 Личные данные</div>
+
+        <!-- ===== ШАГ 1: Личные данные ===== -->
+        <div class="step active" data-step="1">
+            <div class="step-title">📝 Личные данные <span>1/3</span></div>
             <div class="form-group"><label>1. Ваше Имя Фамилия (IC) <span class="required">*</span></label><div class="example">📌 Пример: <i>Rubi Antwoord</i></div><input type="text" id="d_q1" placeholder="Введите имя персонажа" required></div>
             <div class="form-group"><label>2. Ваше Имя (OOC) <span class="required">*</span></label><div class="example">📌 Пример: <i>Вадим</i></div><input type="text" id="d_q2" placeholder="Введите ваше реальное имя" required></div>
             <div class="form-group"><label>3. Ваш возраст (OOC) <span class="required">*</span></label><div class="example">📌 Пример: <i>28</i></div><input type="text" id="d_q3" placeholder="Ваш возраст" required></div>
             <div class="form-group"><label>4. Ваш игровой онлайн (OOC) <span class="required">*</span></label><div class="example">📌 Пример: <i>5 - 6 часов</i></div><input type="text" id="d_q4" placeholder="Сколько часов в день вы играете?" required></div>
             <div class="form-group"><label>5. Ваш прайм-тайм <span class="required">*</span></label><div class="example">📌 Пример: <i>10:00 - 13:00</i></div><input type="text" id="d_q5" placeholder="Укажите ваше активное время" required></div>
             <div class="form-group"><label>6. Ваш часовой пояс <span class="required">*</span></label><div class="example">📌 Пример: <i>МСК +6</i></div><input type="text" id="d_q6" placeholder="Ваш часовой пояс" required></div>
+            <div class="nav-buttons">
+                <span></span>
+                <button type="button" class="btn btn-next" onclick="goToStep(2)">Далее →</button>
+            </div>
         </div>
 
-        <div class="section">
-            <div class="section-title">⭐ Оцените себя <span>1–5</span></div>
+        <!-- ===== ШАГ 2: Рейтинги ===== -->
+        <div class="step" data-step="2">
+            <div class="step-title">⭐ Оцените себя <span>2/3</span></div>
             <div id="d_ratingBlock1">
                 <div class="rating-group"><div class="rating-label">Адекватность <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r1"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r1"></div></div></div>
                 <div class="rating-group"><div class="rating-label">Стрессоустойчивость <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r2"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r2"></div></div></div>
@@ -164,7 +330,7 @@
                 <div class="rating-group"><div class="rating-label">Любовь к своей работе <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r4"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r4"></div></div></div>
                 <div class="rating-group"><div class="rating-label">Целеустремленность <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r5"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r5"></div></div></div>
             </div>
-            <div class="section-title" style="margin-top:2rem;">📜 Знание законодательной базы <span>1–5</span></div>
+            <div class="step-title" style="margin-top:1.5rem;">📜 Знание законодательной базы <span>2/3</span></div>
             <div id="d_ratingBlock2">
                 <div class="rating-group"><div class="rating-label">Конституция <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r6"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r6"></div></div></div>
                 <div class="rating-group"><div class="rating-label">Уголовный кодекс <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r7"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r7"></div></div></div>
@@ -173,10 +339,16 @@
                 <div class="rating-group"><div class="rating-label">Устав Секретариата <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r10"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r10"></div></div></div>
                 <div class="rating-group"><div class="rating-label">Трудовой Кодекс <span class="rating-score">0/5</span></div><div class="stars-wrapper" data-key="d_r11"></div><div class="star-progress"><div class="star-progress-bar" id="d_progress-r11"></div></div></div>
             </div>
+            <div class="nav-buttons">
+                <button type="button" class="btn btn-back" onclick="goToStep(1)">← Назад</button>
+                <button type="button" class="btn btn-next" onclick="goToStep(3)">Далее →</button>
+            </div>
         </div>
 
-        <div class="section">
-            <div class="section-title">ℹ️ Информация о себе</div>
+        <!-- ===== ШАГ 3: Информация о себе + Рисовалка ===== -->
+        <div class="step" data-step="3">
+            <div class="step-title">ℹ️ Информация о себе <span>3/3</span></div>
+
             <div class="form-group">
                 <label>Имеется ли у вас опыт работы на похожих должностях?</label>
                 <div class="radio-group" id="d_experienceRadio">
@@ -188,6 +360,7 @@
                     <textarea id="d_q_experience_detail" class="auto-expand" placeholder="Опишите ваш опыт работы..."></textarea>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Допустимо ли брать деньги за сдачу экзаменов (именно в Аппарате Правительства)? <span class="required">*</span></label>
                 <div class="radio-group" id="d_examMoneyRadio">
@@ -199,35 +372,73 @@
                     <textarea id="d_q_situation3" class="auto-expand" rows="3" placeholder="Ваш развёрнутый ответ..."></textarea>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Представим такую ситуацию: В мэрии никого нет, но при этом в штате есть сотрудники Аппарата Правительства, что вы будете делать? <span class="required">*</span></label>
                 <textarea id="d_q_situation1" class="auto-expand" rows="3" placeholder="Ваш развёрнутый ответ..." required></textarea>
             </div>
+
             <div class="form-group">
                 <label>Вас оскорбили в Дискорде, что вы будете делать? <span class="required">*</span></label>
                 <textarea id="d_q_situation2" class="auto-expand" rows="3" placeholder="Ваш развёрнутый ответ..." required></textarea>
             </div>
+
             <div class="form-group">
                 <label>Пару слов о себе <span class="required">*</span></label>
                 <textarea id="d_q_about" class="auto-expand" rows="3" placeholder="Расскажите немного о себе..." required></textarea>
             </div>
+
             <div class="form-group">
                 <label>Ради чего Вы хотите стать Дисциплинарным инспектором? <span class="required">*</span></label>
                 <textarea id="d_q_motivation" class="auto-expand" rows="3" placeholder="Ваша мотивация..." required></textarea>
             </div>
+
             <div class="form-group">
                 <label>Как вы думаете, какими качествами должен обладать Дисциплинарный инспектор? <span class="required">*</span></label>
                 <textarea id="d_q_qualities" class="auto-expand" rows="3" placeholder="Перечислите и опишите качества..." required></textarea>
             </div>
+
+            <!-- === РИСОВАЛКА === -->
+            <div class="drawing-area">
+                <div class="draw-label">
+                    🎨 Можете оставить подарок для ГАП и ЗГАП
+                    <small>(необязательно)</small>
+                </div>
+                <div class="drawing-canvas-wrapper">
+                    <canvas id="d_drawingCanvas" width="400" height="400"></canvas>
+                </div>
+                <div class="drawing-tools">
+                    <button class="color-btn active" style="background:#000000;" data-color="#000000"></button>
+                    <button class="color-btn" style="background:#ef4444;" data-color="#ef4444"></button>
+                    <button class="color-btn" style="background:#f97316;" data-color="#f97316"></button>
+                    <button class="color-btn" style="background:#eab308;" data-color="#eab308"></button>
+                    <button class="color-btn" style="background:#22c55e;" data-color="#22c55e"></button>
+                    <button class="color-btn" style="background:#3b82f6;" data-color="#3b82f6"></button>
+                    <button class="color-btn" style="background:#8b5cf6;" data-color="#8b5cf6"></button>
+                    <button class="color-btn" style="background:#ec4899;" data-color="#ec4899"></button>
+                    <button class="color-btn" style="background:#ffffff;border-color:#dce3ed;" data-color="#ffffff"></button>
+                    <div class="size-slider">
+                        <span>✏️</span>
+                        <input type="range" id="d_brushSize" min="2" max="20" value="4">
+                    </div>
+                    <button class="clear-btn" id="d_clearDrawing">🗑️ Очистить</button>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button type="button" class="btn btn-back" onclick="goToStep(2)">← Назад</button>
+                <button type="submit" class="btn btn-submit">📤 Отправить анкету</button>
+            </div>
         </div>
 
-        <button type="submit" class="btn-submit">📤 Отправить анкету</button>
     </form>
 
+    <!-- Окно успешной отправки -->
     <div class="success-overlay" id="d_successOverlay">
         <div class="icon">✅</div>
         <div class="title">Ваш ответ отправлен.</div>
         <div class="subtitle">Спасибо за вашу заявку!</div>
+        <div class="gift-note">🎨 Можете оставить подарок для ГАП и ЗГАП</div>
         <button class="close-btn" id="d_closeSuccess">Закрыть</button>
     </div>
 
@@ -236,6 +447,43 @@
 </div>
 
 <script>
+    // ============================================================
+    // 1. НАВИГАЦИЯ ПО ШАГАМ
+    // ============================================================
+    let currentStep = 1;
+    const totalSteps = 3;
+
+    function goToStep(step) {
+        if (step < 1 || step > totalSteps) return;
+        currentStep = step;
+        
+        // Скрываем все шаги
+        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
+        
+        // Обновляем индикаторы
+        document.querySelectorAll('.step-dot').forEach((dot, idx) => {
+            dot.classList.remove('active', 'done');
+            if (idx + 1 === step) dot.classList.add('active');
+            else if (idx + 1 < step) dot.classList.add('done');
+        });
+
+        // Обновляем высоту контейнера
+        updateContainerHeight();
+    }
+
+    function updateContainerHeight() {
+        const container = document.getElementById('mainContainer');
+        const activeStep = document.querySelector('.step.active');
+        if (activeStep) {
+            container.style.minHeight = 'auto';
+            // Небольшая задержка для пересчёта
+            setTimeout(() => {
+                container.style.minHeight = container.scrollHeight + 'px';
+            }, 50);
+        }
+    }
+
     // === Рейтинги ===
     document.querySelectorAll('#surveyForm1 .stars-wrapper').forEach(wrapper => {
         const key = wrapper.dataset.key;
@@ -294,13 +542,125 @@
     d_examRadios.forEach(radio => radio.addEventListener('change', toggleColleague));
     d_colleague.style.display = 'none';
 
-    // === Отправка ===
+    // ============================================================
+    // 2. РИСОВАЛКА
+    // ============================================================
+    const canvas = document.getElementById('d_drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let currentColor = '#000000';
+    let brushSize = 4;
+
+    // Настройка canvas под размер
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        // Сохраняем пропорции 1:1
+        canvas.width = 400;
+        canvas.height = 400;
+        // Восстанавливаем рисунок, если он был
+        if (canvas._savedData) {
+            const img = new Image();
+            img.onload = () => { ctx.drawImage(img, 0, 0); };
+            img.src = canvas._savedData;
+        }
+    }
+
+    // Инициализация белого фона
+    function clearCanvas() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        canvas._savedData = canvas.toDataURL();
+    }
+    clearCanvas();
+
+    // Получение координат
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+            e.preventDefault();
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        lastX = pos.x;
+        lastY = pos.y;
+        canvas._savedData = canvas.toDataURL();
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+
+    // Выбор цвета
+    document.querySelectorAll('#d_clearDrawing').forEach(btn => {
+        btn.addEventListener('click', clearCanvas);
+    });
+
+    document.querySelectorAll('.drawing-tools .color-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.drawing-tools .color-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentColor = this.dataset.color;
+        });
+    });
+
+    document.getElementById('d_brushSize').addEventListener('input', function() {
+        brushSize = parseInt(this.value);
+    });
+
+    // Сохраняем рисунок при изменении размера
+    window.addEventListener('resize', resizeCanvas);
+
+    // ============================================================
+    // 3. ОТПРАВКА
+    // ============================================================
     const d_form = document.getElementById('surveyForm1');
     const d_toast = document.getElementById('d_toast');
     const d_successOverlay = document.getElementById('d_successOverlay');
 
     d_form.addEventListener('submit', function(e) {
         e.preventDefault();
+
+        // --- Шаг 1: Личные данные ---
         const q1 = document.getElementById('d_q1').value.trim();
         const q2 = document.getElementById('d_q2').value.trim();
         const q3 = document.getElementById('d_q3').value.trim();
@@ -309,6 +669,7 @@
         const q6 = document.getElementById('d_q6').value.trim();
         if (!q1 || !q2 || !q3 || !q4 || !q5 || !q6) { showDToast('❌ Заполните все поля в "Личные данные"!', 'error'); return; }
 
+        // --- Шаг 3: Информация о себе ---
         const expSelected = document.querySelector('input[name="d_experience"]:checked');
         const experience = expSelected ? expSelected.value : 'not_specified';
         let experienceDetail = '';
@@ -331,6 +692,7 @@
         const qualities = document.getElementById('d_q_qualities').value.trim();
         if (!situation1 || !situation2 || !about || !motivation || !qualities) { showDToast('❌ Заполните все развёрнутые вопросы!', 'error'); return; }
 
+        // --- Рейтинги ---
         const ratings = {};
         let allRated = true;
         document.querySelectorAll('#surveyForm1 .stars-wrapper').forEach(w => {
@@ -341,14 +703,18 @@
         });
         if (!allRated) { showDToast('❌ Оцените все пункты (от 1 до 5)!', 'error'); return; }
 
+        // --- Рисунок ---
+        const drawingData = canvas.toDataURL('image/png');
+
         const answer = {
             q1, q2, q3, q4, q5, q6,
             ratings,
             experience, experienceDetail, examMoney, situation3,
-            situation1, situation2, about, motivation, qualities
+            situation1, situation2, about, motivation, qualities,
+            drawing: drawingData
         };
 
-        // === ОТПРАВКА НА СЕРВЕР ===
+        // --- Отправка на сервер ---
         fetch('/api/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -363,24 +729,10 @@
                 d_successOverlay.classList.add('show');
                 document.getElementById('d_closeSuccess').addEventListener('click', function() {
                     d_successOverlay.classList.remove('show');
-                    d_form.reset();
-                    document.querySelectorAll('#surveyForm1 .stars-wrapper').forEach(w => {
-                        w.querySelectorAll('.star-btn').forEach(star => star.classList.remove('active'));
-                        delete w.dataset.selected;
-                        const key = w.dataset.key.replace('d_', '');
-                        const progressBar = document.getElementById(`d_progress-${key}`);
-                        if (progressBar) { progressBar.style.width = '0%'; progressBar.closest('.star-progress').classList.remove('active'); }
-                        const label = w.closest('.rating-group').querySelector('.rating-label .rating-score');
-                        if (label) { label.textContent = '0/5'; label.classList.remove('active'); }
-                    });
-                    d_expDetail.classList.remove('visible');
-                    document.getElementById('d_q_experience_detail').removeAttribute('required');
-                    d_colleague.style.display = 'none';
-                    document.getElementById('d_q_situation3').removeAttribute('required');
-                    document.querySelectorAll('#surveyForm1 textarea.auto-expand').forEach(t => t.style.height = 'auto');
+                    location.reload(); // Перезагружаем для новой анкеты
                 });
             } else {
-                showDToast('❌ Ошибка при отправке!', 'error');
+                showDToast('❌ Ошибка при отправке: ' + (data.error || 'неизвестная'), 'error');
             }
         })
         .catch(() => {
@@ -394,6 +746,10 @@
         clearTimeout(d_toast._timer);
         d_toast._timer = setTimeout(() => { d_toast.className = 'toast'; }, 4000);
     }
+
+    // Инициализация высоты
+    setTimeout(updateContainerHeight, 100);
+    window.addEventListener('resize', updateContainerHeight);
 </script>
 </body>
 </html>
