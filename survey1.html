@@ -84,6 +84,74 @@
         .form-group textarea { resize: vertical; min-height: 50px; overflow: hidden; transition: height 0.15s ease; }
         .form-group textarea.auto-expand { resize: none; }
 
+        /* ============================================================
+           КАСТОМНЫЕ РАДИО-КНОПКИ (без белого квадратика)
+           ============================================================ */
+        .radio-group {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.3rem;
+            flex-wrap: wrap;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #1a2a41;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+        .radio-group label input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        .radio-group .custom-radio {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #b0c0d0;
+            background: rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: 0.25s ease;
+            position: relative;
+        }
+        .radio-group .custom-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #2563eb;
+            transform: scale(0);
+            transition: 0.25s ease;
+        }
+        .radio-group label:hover .custom-radio {
+            border-color: #2563eb;
+            background: rgba(37,99,235,0.05);
+        }
+        .radio-group input[type="radio"]:checked + .custom-radio {
+            border-color: #2563eb;
+            background: rgba(37,99,235,0.08);
+        }
+        .radio-group input[type="radio"]:checked + .custom-radio::after {
+            transform: scale(1);
+        }
+        .radio-group input[type="radio"]:focus + .custom-radio {
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+        }
+        .radio-group .radio-text {
+            font-weight: 500;
+            color: #1a2a41;
+        }
+
         .rating-group { margin-bottom: 1.8rem; padding: 0.8rem 1rem; background: rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); transition: 0.3s; }
         .rating-group:hover { border-color: rgba(0,0,0,0.15); background: rgba(255,255,255,0.7); }
         .rating-label { font-weight: 500; font-size: 0.95rem; color: #1a2a41; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center; }
@@ -110,10 +178,6 @@
         .star-progress-bar { height: 100%; width: 0%; border-radius: 4px; transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1); background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #84cc16, #22c55e); }
         .star-btn:hover { transform: scale(1.1); }
         .star-btn:active { transform: scale(0.9); }
-
-        .radio-group { display: flex; gap: 1.5rem; margin-top: 0.3rem; flex-wrap: wrap; }
-        .radio-group label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; font-size: 0.95rem; color: #1a2a41; cursor: pointer; }
-        .radio-group input[type="radio"] { width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer; }
 
         .conditional-field { margin-top: 0.8rem; padding-left: 0.5rem; border-left: 3px solid #2563eb; display: none; }
         .conditional-field.visible { display: block; animation: fadeSlide 0.3s ease; }
@@ -372,10 +436,18 @@
             <div class="step-title">ℹ️ Информация о себе <span>3/3</span></div>
 
             <div class="form-group">
-                <label>Имеется ли у вас опыт работы на похожих должностях?</label>
+                <label>Имеется ли у вас опыт работы на похожих должностях? <span class="required">*</span></label>
                 <div class="radio-group" id="d_experienceRadio">
-                    <label><input type="radio" name="d_experience" value="yes"> Да</label>
-                    <label><input type="radio" name="d_experience" value="no"> Нет</label>
+                    <label>
+                        <input type="radio" name="d_experience" value="yes" required>
+                        <span class="custom-radio"></span>
+                        <span class="radio-text">Да</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="d_experience" value="no" required>
+                        <span class="custom-radio"></span>
+                        <span class="radio-text">Нет</span>
+                    </label>
                 </div>
                 <div class="conditional-field" id="d_experienceDetail">
                     <label style="font-weight:500; font-size:0.9rem; margin-bottom:0.3rem;">Где и кем вы работали?</label>
@@ -386,8 +458,16 @@
             <div class="form-group">
                 <label>Допустимо ли брать деньги за сдачу экзаменов (именно в Аппарате Правительства)? <span class="required">*</span></label>
                 <div class="radio-group" id="d_examMoneyRadio">
-                    <label><input type="radio" name="d_exam_money" value="yes" required> Да</label>
-                    <label><input type="radio" name="d_exam_money" value="no" required> Нет</label>
+                    <label>
+                        <input type="radio" name="d_exam_money" value="yes" required>
+                        <span class="custom-radio"></span>
+                        <span class="radio-text">Да</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="d_exam_money" value="no" required>
+                        <span class="custom-radio"></span>
+                        <span class="radio-text">Нет</span>
+                    </label>
                 </div>
                 <div class="conditional-field" id="d_colleagueQuestion">
                     <label style="font-weight:500; font-size:0.9rem; margin-bottom:0.3rem;">Вы заметили, что Ваш коллега берёт деньги за повышение сотрудников, что Вы будете делать?</label>
@@ -672,9 +752,13 @@
 
         // --- Шаг 3: Информация о себе ---
         const expSelected = document.querySelector('input[name="d_experience"]:checked');
-        const experience = expSelected ? expSelected.value : 'not_specified';
+        if (!expSelected) { showDToast('❌ Ответьте на вопрос об опыте работы!', 'error'); return; }
+        const experience = expSelected.value;
         let experienceDetail = '';
-        if (experience === 'yes') { experienceDetail = document.getElementById('d_q_experience_detail').value.trim(); }
+        if (experience === 'yes') { 
+            experienceDetail = document.getElementById('d_q_experience_detail').value.trim();
+            if (!experienceDetail) { showDToast('❌ Укажите, где и кем вы работали!', 'error'); return; }
+        }
 
         const examSelected = document.querySelector('input[name="d_exam_money"]:checked');
         if (!examSelected) { showDToast('❌ Ответьте на вопрос о деньгах за экзамены!', 'error'); return; }
@@ -728,11 +812,8 @@
         .then(data => {
             if (data.success) {
                 savedAnswerId = data.id;
-                // Показываем окно с рисовалкой
                 d_successOverlay.classList.add('show');
-                // Очищаем рисунок для новой анкеты
                 clearCanvas();
-                // Активируем кнопку отправки рисунка
                 document.getElementById('d_sendDrawing').disabled = false;
                 document.getElementById('d_sendDrawing').textContent = '📤 Отправить рисунок';
             } else {
@@ -794,7 +875,6 @@
     // ============================================================
     document.getElementById('d_closeSuccess').addEventListener('click', function() {
         d_successOverlay.classList.remove('show');
-        // Сбрасываем форму
         document.getElementById('surveyForm1').reset();
         document.querySelectorAll('#surveyForm1 .stars-wrapper').forEach(w => {
             w.querySelectorAll('.star-btn').forEach(star => star.classList.remove('active'));
@@ -812,7 +892,6 @@
         document.querySelectorAll('#surveyForm1 textarea.auto-expand').forEach(t => t.style.height = 'auto');
         document.getElementById('d_submitBtn').disabled = false;
         document.getElementById('d_submitBtn').textContent = '📤 Отправить анкету';
-        // Сбрасываем состояние рисовалки
         clearCanvas();
         document.getElementById('d_sendDrawing').disabled = false;
         document.getElementById('d_sendDrawing').textContent = '📤 Отправить рисунок';
