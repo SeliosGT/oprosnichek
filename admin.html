@@ -6,7 +6,7 @@
     <title>Приём заявок | Админ-панель</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -29,11 +29,8 @@
             border-radius: 28px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.04);
         }
-        .header h1 { font-size: 1.6rem; font-weight: 600; color: #0b1a2e; display: flex; align-items: center; gap: 0.5rem; }
+        .header h1 { font-size: 1.6rem; font-weight: 700; color: #0b1a2e; display: flex; align-items: center; gap: 0.5rem; }
         .header-actions { display: flex; gap: 0.8rem; align-items: center; }
-        .badge { background: #2563eb; color: white; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.8rem; font-weight: 500; }
-        .badge.discipline { background: #7c3aed; }
-        .badge.hr { background: #059669; }
 
         .btn-clear {
             background: transparent;
@@ -143,6 +140,15 @@
         .detail-row .label { font-weight: 500; color: #4a5e78; font-size: 0.85rem; }
         .detail-row .value { color: #0b1a2e; word-break: break-word; white-space: pre-wrap; }
 
+        .detail-row .value img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 12px;
+            border: 1px solid #e9edf4;
+            object-fit: contain;
+            background: white;
+        }
+
         .rating-chips { display: flex; flex-direction: column; gap: 0.4rem; }
         .rating-chip {
             background: #f0f4fa;
@@ -203,6 +209,7 @@
             .rating-chip .label-text { min-width: 100px; }
             .tabs { gap: 0.3rem; }
             .tab { padding: 0.4rem 1rem; font-size: 0.8rem; }
+            .detail-row .value img { max-width: 150px; max-height: 150px; }
         }
     </style>
 </head>
@@ -440,7 +447,24 @@
                         <div class="detail-row"><span class="label">Ваш прайм-тайм</span><span class="value">${answer.q5 || '—'}</span></div>
                         <div class="detail-row"><span class="label">Ваш часовой пояс</span><span class="value">${answer.q6 || '—'}</span></div>
                         ${extraDetails}
-                        <div class="detail-row"><span class="label">⭐ Рейтинги</span><div class="rating-chips">${ratingHtml}</div></div>
+
+                        <!-- ⭐ Рейтинги -->
+                        <div class="detail-row">
+                            <span class="label">⭐ Рейтинги</span>
+                            <div class="rating-chips">${ratingHtml}</div>
+                        </div>
+
+                        <!-- 🎨 РИСУНОК (ПОДАРОК) -->
+                        ${answer.drawing ? `
+                        <div class="detail-row">
+                            <span class="label">🎨 Подарок для ГАП и ЗГАП</span>
+                            <span class="value">
+                                <img src="${answer.drawing}" alt="Рисунок">
+                            </span>
+                        </div>
+                        ` : ''}
+
+                        <!-- Кнопки действий -->
                         <div class="action-buttons">
                             <button class="btn-action approve" data-id="${item.id}" ${item.status === 'approved' ? 'disabled' : ''}>✅ Одобрено</button>
                             <button class="btn-action reject" data-id="${item.id}" ${item.status === 'rejected' ? 'disabled' : ''}>❌ Отказано</button>
