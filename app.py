@@ -12,7 +12,7 @@ CORS(app)
 # --- Подключение к базе данных ---
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
-    # Для локального тестирования
+    # Для локального тестирования (если запускаете без Render)
     DATABASE_URL = "postgresql://user:pass@localhost:5432/surveys"
 
 def get_db_connection():
@@ -99,7 +99,7 @@ def get_answers():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- Обновление статуса ---
+# --- Обновление статуса (одобрено/отказано) ---
 @app.route('/api/update-status', methods=['POST'])
 def update_status():
     try:
@@ -110,6 +110,41 @@ def update_status():
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("UPDATE answers SET status = %s WHERE id = %s", (status, answer_id))
+            conn.commit()
+        conn.close()
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# --- Обновление рисунка после отправки ---
+@app.route('/api/update-drawing', methods=['POST'])
+def update_drawing():
+    try:
+        data = request.json
+        answer_id = data.get('id')
+        drawing = data.get('drawing')
+
+        if not answer_id or not drawing:
+            return jsonify({"success": False, "error": "Не указан ID или рисунок"}), 400
+
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            # Получаем текущие данные
+            cur.execute("SELECT answer_data FROM answers WHERE id = %s", (answer_id,))
+            row = cur.fetchone()
+            if not row:
+                return jsonify({"success": False, "error": "Запись не найдена"}), 404
+            
+            answer_data = row[0]
+            answer_data['drawing'] = drawing
+            
+            # Обновляем
+            cur.execute(
+                "UPDATE answers SET answer_data = %s WHERE id = %s",
+                (json.dumps(answer_data), answer_id)
+            )
             conn.commit()
         conn.close()
 
