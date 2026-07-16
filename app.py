@@ -5,20 +5,23 @@ import psycopg2.extras
 import json
 import os
 from datetime import datetime
+import requests
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
-# --- Подключение к базе данных ---
+# ============================================================
+# ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ
+# ============================================================
+
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
-    # Для локального тестирования (если запускаете без Render)
+    # Для локального тестирования
     DATABASE_URL = "postgresql://user:pass@localhost:5432/surveys"
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
-# --- Инициализация базы данных ---
 def init_db():
     try:
         conn = get_db_connection()
@@ -40,9 +43,44 @@ def init_db():
 
 init_db()
 
-# ============================================
-# ===== ЭНДПОИНТЫ API =====
-# ============================================
+# ============================================================
+# НАСТРОЙКА DISCORD БОТА
+# ============================================================
+
+# URL бота на Render (или Railway)
+DISCORD_BOT_URL = os.environ.get('DISCORD_BOT_URL', '')
+
+def notify_discord_bot(survey_type, answer_data, answer_id, date_str):
+    """
+    Отправляет уведомление Discord-боту при новой заявке
+    """
+    if not DISCORD_BOT_URL:
+        print("⚠️ DISCORD_BOT_URL не настроен. Уведомления не отправляются.")
+        return
+
+    try:
+        response = requests.post(
+            DISCORD_BOT_URL,
+            json={
+                'survey_type': survey_type,
+                'answer_data': answer_data,
+                'answer_id': answer_id,
+                'date_str': date_str
+            },
+            timeout=5
+        )
+        if response.status_code == 200:
+            print(f'✅ Уведомление отправлено боту (заявка #{answer_id})')
+        else:
+            print(f'⚠️ Ошибка отправки боту: {response.status_code} - {response.text}')
+    except requests.exceptions.Timeout:
+        print(f'⚠️ Таймаут при отправке уведомления боту (заявка #{answer_id})')
+    except Exception as e:
+        print(f'⚠️ Ошибка отправки боту: {e}')
+
+# ============================================================
+# ЭНДПОИНТЫ API
+# ============================================================
 
 # --- Сохранение ответа ---
 @app.route('/api/submit', methods=['POST'])
@@ -62,12 +100,16 @@ def submit_answer():
             new_id = cur.fetchone()[0]
         conn.close()
 
+        # --- Отправка уведомления в Discord ---
+        date_str = datetime.now().strftime('%d.%m.%Y %H:%M (МСК)')
+        notify_discord_bot(survey_type, answer_data, new_id, date_str)
+
         return jsonify({"success": True, "id": new_id}), 200
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --- Получение всех ответов ---
+# --- Получение всех ответов (для админки) ---
 @app.route('/api/answers', methods=['GET'])
 def get_answers():
     try:
@@ -118,7 +160,7 @@ def update_status():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --- Обновление рисунка после отправки ---
+# --- Обновление рисунка ---
 @app.route('/api/update-drawing', methods=['POST'])
 def update_drawing():
     try:
@@ -136,10 +178,10 @@ def update_drawing():
             row = cur.fetchone()
             if not row:
                 return jsonify({"success": False, "error": "Запись не найдена"}), 404
-            
+
             answer_data = row[0]
             answer_data['drawing'] = drawing
-            
+
             # Обновляем
             cur.execute(
                 "UPDATE answers SET answer_data = %s WHERE id = %s",
@@ -153,7 +195,7 @@ def update_drawing():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --- Удаление всех ответов ---
+# --- Удаление всех ответов (для очистки) ---
 @app.route('/api/clear-all', methods=['POST'])
 def clear_all():
     try:
@@ -167,9 +209,9 @@ def clear_all():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# ============================================
-# ===== ОТДАЧА СТАТИЧЕСКИХ ФАЙЛОВ =====
-# ============================================
+# ============================================================
+# ОТДАЧА СТАТИЧЕСКИХ ФАЙЛОВ
+# ============================================================
 
 # Главная страница
 @app.route('/')
@@ -180,7 +222,7 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Опросники</title>
+        <title>Опросники | Rubi Antwoord</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -223,7 +265,18 @@ def index():
             .link-card.admin { background: #2563eb; }
             .link-card.admin:hover { background: #1d4ed8; }
             .link-card .icon { font-size: 1.5rem; margin-right: 0.5rem; }
-            .footer { margin-top: 2rem; font-size: 0.75rem; color: #8b9db0; }
+            .footer {
+                margin-top: 2rem;
+                font-size: 0.8rem;
+                font-weight: 500;
+                color: #8b9db0;
+            }
+            .footer span {
+                background: linear-gradient(135deg, #2563eb, #7c3aed);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-weight: 700;
+            }
         </style>
     </head>
     <body>
@@ -241,7 +294,7 @@ def index():
                     <span class="icon">🔒</span> Панель администратора
                 </a>
             </div>
-            <div class="footer">Все данные сохраняются в базе данных · Доступ 24/7</div>
+            <div class="footer">by <span>Rubi Antwoord</span></div>
         </div>
     </body>
     </html>
@@ -250,9 +303,7 @@ def index():
 # Отдаём HTML-файлы и картинки
 @app.route('/<path:path>')
 def serve_static(path):
-    # Проверяем, существует ли файл
     if os.path.exists(path):
-        # Определяем MIME-тип
         if path.endswith('.html'):
             return send_from_directory('.', path, mimetype='text/html; charset=utf-8')
         elif path.endswith('.png'):
@@ -268,9 +319,9 @@ def serve_static(path):
     else:
         return f"Файл не найден: {path}", 404
 
-# ============================================
-# ===== ЗАПУСК =====
-# ============================================
+# ============================================================
+# ЗАПУСК
+# ============================================================
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
