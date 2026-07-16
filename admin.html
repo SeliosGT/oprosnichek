@@ -46,6 +46,8 @@
             --scrollbar-thumb: #d1d9e6;
             --bg-container-blur: blur(20px);
             --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
+            --drawing-border: #d1d9e6;
+            --drawing-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
 
         [data-theme="dark"] {
@@ -83,6 +85,8 @@
             --scrollbar-thumb: #2a4a6a;
             --bg-container-blur: blur(25px);
             --shadow-card: 0 4px 20px rgba(0,0,0,0.2);
+            --drawing-border: #4a5e78;
+            --drawing-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -207,7 +211,7 @@
         .tab.active .count { background: rgba(255,255,255,0.2); }
 
         /* ============================================================
-           КАРТОЧКИ (старый дизайн — список)
+           КАРТОЧКИ
            ============================================================ */
         .answers-grid {
             display: flex;
@@ -221,7 +225,6 @@
             padding: 1.5rem 1.8rem;
             box-shadow: var(--shadow);
             border: 1px solid var(--glass-border);
-            cursor: pointer;
             transition: 0.25s ease;
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -229,7 +232,6 @@
         .answer-card:hover {
             box-shadow: var(--shadow-hover);
             border-color: rgba(37,99,235,0.1);
-            transform: translateY(-2px);
         }
 
         .card-header {
@@ -283,13 +285,22 @@
             color: #059669;
         }
 
-        .expand-icon {
+        .expand-btn {
             margin-left: auto;
             color: var(--text-muted);
             font-size: 0.8rem;
             background: var(--tag-bg);
             padding: 0.1rem 0.9rem;
             border-radius: 40px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: 0.2s ease;
+            font-weight: 500;
+            user-select: none;
+        }
+        .expand-btn:hover {
+            background: var(--btn-back-hover);
+            color: var(--text-primary);
         }
 
         .status-badge {
@@ -341,18 +352,36 @@
             word-break: break-word;
             white-space: pre-wrap;
         }
-        .detail-row .value img {
+
+        /* ============================================================
+           РИСУНОК — ВИДИМАЯ РАМКА
+           ============================================================ */
+        .detail-row .value .drawing-wrapper {
+            display: inline-block;
+            padding: 4px;
+            border: 2px solid var(--drawing-border);
+            border-radius: 14px;
+            background: var(--bg-body);
+            box-shadow: var(--drawing-shadow);
+            transition: 0.3s ease;
+        }
+        .detail-row .value .drawing-wrapper:hover {
+            box-shadow: var(--shadow-hover);
+            transform: scale(1.01);
+        }
+        .detail-row .value .drawing-wrapper img {
+            display: block;
             max-width: 200px;
             max-height: 200px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
+            border-radius: 10px;
             object-fit: contain;
             background: white;
             cursor: pointer;
-            transition: 0.2s;
         }
-        .detail-row .value img:hover { transform: scale(1.02); }
 
+        /* ============================================================
+           РЕЙТИНГИ
+           ============================================================ */
         .rating-chips {
             display: flex;
             flex-direction: column;
@@ -499,6 +528,10 @@
             .theme-toggle .label { display: none; }
             .header h1 { font-size: 1.2rem; }
             .tab { padding: 0.4rem 1rem; font-size: 0.8rem; }
+            .detail-row .value .drawing-wrapper img {
+                max-width: 150px;
+                max-height: 150px;
+            }
         }
     </style>
 </head>
@@ -573,7 +606,6 @@
     // ============================================================
     function formatDateToMSK(dateString) {
         const date = new Date(dateString);
-        // Переводим в МСК (UTC+3)
         const mskTime = new Date(date.getTime() + (3 * 60 * 60 * 1000));
         return mskTime.toLocaleString('ru-RU', {
             day: 'numeric',
@@ -679,7 +711,6 @@
             const typeLabel = item.surveyType === 'discipline' ? 'Дисциплинарный инспектор' : 'HR-менеджер';
             const typeClass = item.surveyType === 'discipline' ? 'discipline' : 'hr';
 
-            // Время по МСК
             const dateStr = item.createdAt ? formatDateToMSK(item.createdAt) : 'неизвестно';
 
             const ratings = answer.ratings || {};
@@ -751,6 +782,18 @@
 
             const ratingHtml = renderRatingGroup(selfKeys, '— Оцените себя —') + renderRatingGroup(docKeys, '— Знание законодательной базы —');
 
+            // === Рисунок с видимой рамкой ===
+            const drawingHtml = answer.drawing ? `
+            <div class="detail-row">
+                <span class="label">🎨 Подарок для ГАП и ЗГАП</span>
+                <span class="value">
+                    <div class="drawing-wrapper">
+                        <img src="${answer.drawing}" alt="Рисунок" onclick="window.open(this.src,'_blank')">
+                    </div>
+                </span>
+            </div>
+            ` : '';
+
             html += `
                 <div class="answer-card" data-id="${item.id}">
                     <div class="card-header">
@@ -762,7 +805,7 @@
                         <span class="name">👤 ${answer.q2 || '—'}</span>
                         <span class="ic">🎭 ${answer.q1 || '—'}</span>
                         <span class="type-tag ${typeClass}">${typeLabel}</span>
-                        <span class="expand-icon">${isExpanded ? '▼ свернуть' : '▶ развернуть'}</span>
+                        <button class="expand-btn" data-id="${item.id}">${isExpanded ? '▼ свернуть' : '▶ развернуть'}</button>
                     </div>
                     <div class="card-detail ${isExpanded ? 'open' : ''}">
                         <div class="detail-row"><span class="label">Ваше Имя Фамилия (IC)</span><span class="value">${answer.q1 || '—'}</span></div>
@@ -778,14 +821,7 @@
                             <div class="rating-chips">${ratingHtml}</div>
                         </div>
 
-                        ${answer.drawing ? `
-                        <div class="detail-row">
-                            <span class="label">🎨 Подарок для ГАП и ЗГАП</span>
-                            <span class="value">
-                                <img src="${answer.drawing}" alt="Рисунок" onclick="window.open(this.src,'_blank')">
-                            </span>
-                        </div>
-                        ` : ''}
+                        ${drawingHtml}
 
                         <div class="action-buttons">
                             <button class="btn-action approve" data-id="${item.id}" ${item.status === 'approved' ? 'disabled' : ''}>✅ Одобрено</button>
@@ -798,22 +834,22 @@
 
         container.innerHTML = html;
 
-        // === Клики по карточкам ===
-        document.querySelectorAll('.answer-card').forEach(card => {
-            const id = parseInt(card.dataset.id);
-            const detail = card.querySelector('.card-detail');
-            const icon = card.querySelector('.expand-icon');
-            
-            card.addEventListener('click', function(e) {
-                if (e.target.closest('.action-buttons') || e.target.closest('.btn-action')) return;
+        // === Обработка кнопок "развернуть/свернуть" ===
+        document.querySelectorAll('.expand-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.answer-card');
+                const id = parseInt(card.dataset.id);
+                const detail = card.querySelector('.card-detail');
                 const isOpen = detail.classList.contains('open');
+                
                 if (isOpen) {
                     detail.classList.remove('open');
-                    if (icon) icon.textContent = '▶ развернуть';
+                    this.textContent = '▶ развернуть';
                     expandedCards.delete(id);
                 } else {
                     detail.classList.add('open');
-                    if (icon) icon.textContent = '▼ свернуть';
+                    this.textContent = '▼ свернуть';
                     expandedCards.add(id);
                 }
             });
