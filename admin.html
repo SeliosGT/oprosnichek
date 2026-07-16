@@ -216,26 +216,7 @@
 <body>
 
 <!-- ============================================ -->
-<!-- 🔐 ЗАЩИТА ПАРОЛЕМ (САМОЕ НАЧАЛО)              -->
-<!-- ============================================ -->
-<script>
-    const password = prompt('🔒 Введите пароль для доступа к админ-панели:');
-    if (password !== '12345') {  // ← ЗАМЕНИТЕ '12345' НА СВОЙ ПАРОЛЬ!
-        document.body.innerHTML = `
-            <div style="display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f9;">
-                <div style="background:white;padding:3rem 4rem;border-radius:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.08);">
-                    <h1 style="font-size:3rem;margin-bottom:0.5rem;">🚫</h1>
-                    <h2 style="font-size:1.5rem;color:#0b1a2e;">Доступ запрещён</h2>
-                    <p style="color:#6b7f99;margin-top:0.3rem;">Неверный пароль</p>
-                </div>
-            </div>
-        `;
-        throw new Error('Access denied');
-    }
-</script>
-
-<!-- ============================================ -->
-<!-- ОСНОВНАЯ ЧАСТЬ СТРАНИЦЫ                       -->
+<!-- ОСНОВНАЯ ЧАСТЬ СТРАНИЦЫ (БЕЗ ПАРОЛЯ)         -->
 <!-- ============================================ -->
 <div class="container">
     <div class="header">
