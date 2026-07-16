@@ -48,6 +48,9 @@
             --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
             --drawing-border: #d1d9e6;
             --drawing-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            --modal-overlay: rgba(0,0,0,0.5);
+            --modal-bg: rgba(255,255,255,0.95);
+            --loader-color: #2563eb;
         }
 
         [data-theme="dark"] {
@@ -87,6 +90,9 @@
             --shadow-card: 0 4px 20px rgba(0,0,0,0.2);
             --drawing-border: #4a5e78;
             --drawing-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            --modal-overlay: rgba(0,0,0,0.7);
+            --modal-bg: rgba(20,30,50,0.95);
+            --loader-color: #3b82f6;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -108,6 +114,7 @@
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-card);
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
         }
 
         /* ============================================================
@@ -211,6 +218,76 @@
         .tab.active .count { background: rgba(255,255,255,0.2); }
 
         /* ============================================================
+           АНИМАЦИЯ ЗАГРУЗКИ
+           ============================================================ */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 1rem;
+            gap: 1.5rem;
+        }
+        .loading-spinner {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        .loading-spinner .ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--loader-color);
+            animation: spin 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+        }
+        .loading-spinner .ring:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border-top-color: var(--text-muted);
+            animation-duration: 1.2s;
+            animation-direction: reverse;
+        }
+        .loading-spinner .ring:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+            border-top-color: var(--text-secondary);
+            animation-duration: 1.6s;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .loading-text .dots::after {
+            content: '';
+            animation: dots 1.5s steps(4) infinite;
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* ============================================================
            КАРТОЧКИ
            ============================================================ */
         .answers-grid {
@@ -228,10 +305,24 @@
             transition: 0.25s ease;
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
+            cursor: pointer;
+            position: relative;
         }
         .answer-card:hover {
             box-shadow: var(--shadow-hover);
             border-color: rgba(37,99,235,0.1);
+        }
+        .answer-card .click-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            cursor: pointer;
+        }
+        .answer-card .click-overlay.hidden {
+            display: none;
         }
 
         .card-header {
@@ -241,6 +332,8 @@
             align-items: baseline;
             gap: 0.5rem 1rem;
             margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
         }
         .card-id {
             font-weight: 600;
@@ -260,6 +353,8 @@
             flex-wrap: wrap;
             gap: 1rem 2rem;
             align-items: center;
+            position: relative;
+            z-index: 2;
         }
         .card-preview .name {
             font-weight: 600;
@@ -297,6 +392,8 @@
             transition: 0.2s ease;
             font-weight: 500;
             user-select: none;
+            position: relative;
+            z-index: 3;
         }
         .expand-btn:hover {
             background: var(--btn-back-hover);
@@ -332,6 +429,8 @@
             border-top: 1px dashed var(--border-color);
             gap: 0.8rem;
             flex-direction: column;
+            position: relative;
+            z-index: 2;
         }
         .card-detail.open { display: flex; }
 
@@ -354,7 +453,7 @@
         }
 
         /* ============================================================
-           РИСУНОК — ВИДИМАЯ РАМКА
+           РИСУНОК
            ============================================================ */
         .detail-row .value .drawing-wrapper {
             display: inline-block;
@@ -364,6 +463,7 @@
             background: var(--bg-body);
             box-shadow: var(--drawing-shadow);
             transition: 0.3s ease;
+            cursor: pointer;
         }
         .detail-row .value .drawing-wrapper:hover {
             box-shadow: var(--shadow-hover);
@@ -376,7 +476,53 @@
             border-radius: 10px;
             object-fit: contain;
             background: white;
-            cursor: pointer;
+        }
+
+        /* ============================================================
+           МОДАЛЬНОЕ ОКНО ДЛЯ РИСУНКА
+           ============================================================ */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-overlay);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            animation: modalFade 0.3s ease;
+        }
+        .image-modal.active { display: flex; }
+        @keyframes modalFade {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .image-modal .modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            background: var(--modal-bg);
+            border-radius: 24px;
+            padding: 0.5rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            animation: modalZoom 0.3s ease;
+        }
+        @keyframes modalZoom {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .image-modal .modal-content img {
+            display: block;
+            max-width: 80vw;
+            max-height: 80vh;
+            border-radius: 16px;
+            object-fit: contain;
         }
 
         /* ============================================================
@@ -532,6 +678,14 @@
                 max-width: 150px;
                 max-height: 150px;
             }
+            .image-modal .modal-content {
+                max-width: 98vw;
+                padding: 0.2rem;
+            }
+            .image-modal .modal-content img {
+                max-width: 96vw;
+                max-height: 80vh;
+            }
         }
     </style>
 </head>
@@ -559,10 +713,19 @@
     </div>
 
     <div id="answersContainer" class="answers-grid">
-        <div class="empty-state"><span>⏳</span><p>Загрузка...</p></div>
+        <!-- Загрузка показывается через JS -->
     </div>
 
     <div class="footer-brand">by <span>Rubi Antwoord</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ РИСУНКА                                  -->
+<!-- ============================================================ -->
+<div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <img id="modalImage" src="" alt="Подарок для ГАП и ЗГАП">
+    </div>
 </div>
 
 <script>
@@ -602,7 +765,31 @@
     updateThemeUI(savedTheme);
 
     // ============================================================
-    // 2. ВРЕМЯ ПО МСК
+    // 2. МОДАЛЬНОЕ ОКНО ДЛЯ РИСУНКА
+    // ============================================================
+    function openImageModal(src) {
+        const modal = document.getElementById('imageModal');
+        const img = document.getElementById('modalImage');
+        img.src = src;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Закрытие по Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+
+    // ============================================================
+    // 3. ВРЕМЯ ПО МСК
     // ============================================================
     function formatDateToMSK(dateString) {
         const date = new Date(dateString);
@@ -616,10 +803,23 @@
     }
 
     // ============================================================
-    // 3. ЗАГРУЗКА ДАННЫХ
+    // 4. ЗАГРУЗКА ДАННЫХ
     // ============================================================
+    function showLoading() {
+        container.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner">
+                    <div class="ring"></div>
+                    <div class="ring"></div>
+                    <div class="ring"></div>
+                </div>
+                <div class="loading-text">Загрузка<span class="dots"></span></div>
+            </div>
+        `;
+    }
+
     function loadAnswersFromServer() {
-        container.innerHTML = `<div class="empty-state"><span>⏳</span><p>Загрузка...</p></div>`;
+        showLoading();
         
         fetch('/api/answers?type=' + currentFilter)
             .then(res => res.json())
@@ -638,7 +838,7 @@
     }
 
     // ============================================================
-    // 4. ОБНОВЛЕНИЕ СЧЁТЧИКОВ
+    // 5. ОБНОВЛЕНИЕ СЧЁТЧИКОВ
     // ============================================================
     function updateCounts(answers) {
         if (!answers) return;
@@ -650,7 +850,7 @@
     }
 
     // ============================================================
-    // 5. ПАРОЛЬ НА ОЧИСТКУ
+    // 6. ПАРОЛЬ НА ОЧИСТКУ
     // ============================================================
     document.getElementById('clearBtn').addEventListener('click', function() {
         const password = prompt('🔒 Введите пароль для очистки всех заявок:');
@@ -673,7 +873,7 @@
     });
 
     // ============================================================
-    // 6. ОБНОВЛЕНИЕ СТАТУСА
+    // 7. ОБНОВЛЕНИЕ СТАТУСА
     // ============================================================
     function updateStatus(id, status) {
         fetch('/api/update-status', {
@@ -691,7 +891,7 @@
     }
 
     // ============================================================
-    // 7. ОТРИСОВКА КАРТОЧЕК
+    // 8. ОТРИСОВКА КАРТОЧЕК
     // ============================================================
     function renderAnswers(answers) {
         if (!answers || !answers.length) {
@@ -787,8 +987,8 @@
             <div class="detail-row">
                 <span class="label">🎨 Подарок для ГАП и ЗГАП</span>
                 <span class="value">
-                    <div class="drawing-wrapper">
-                        <img src="${answer.drawing}" alt="Рисунок" onclick="window.open(this.src,'_blank')">
+                    <div class="drawing-wrapper" onclick="openImageModal('${answer.drawing}')">
+                        <img src="${answer.drawing}" alt="Рисунок">
                     </div>
                 </span>
             </div>
@@ -796,6 +996,7 @@
 
             html += `
                 <div class="answer-card" data-id="${item.id}">
+                    <div class="click-overlay ${isExpanded ? 'hidden' : ''}" data-id="${item.id}"></div>
                     <div class="card-header">
                         <span class="card-id">#${item.id}</span>
                         <span class="card-date">${dateStr}</span>
@@ -834,6 +1035,23 @@
 
         container.innerHTML = html;
 
+        // === Обработка кликов по карточке (разворачивание) ===
+        document.querySelectorAll('.click-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function() {
+                const card = this.closest('.answer-card');
+                const id = parseInt(card.dataset.id);
+                const detail = card.querySelector('.card-detail');
+                const btn = card.querySelector('.expand-btn');
+                
+                if (!detail.classList.contains('open')) {
+                    detail.classList.add('open');
+                    btn.textContent = '▼ свернуть';
+                    expandedCards.add(id);
+                    this.classList.add('hidden');
+                }
+            });
+        });
+
         // === Обработка кнопок "развернуть/свернуть" ===
         document.querySelectorAll('.expand-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
@@ -841,18 +1059,50 @@
                 const card = this.closest('.answer-card');
                 const id = parseInt(card.dataset.id);
                 const detail = card.querySelector('.card-detail');
+                const overlay = card.querySelector('.click-overlay');
                 const isOpen = detail.classList.contains('open');
                 
                 if (isOpen) {
                     detail.classList.remove('open');
                     this.textContent = '▶ развернуть';
                     expandedCards.delete(id);
+                    if (overlay) overlay.classList.remove('hidden');
                 } else {
                     detail.classList.add('open');
                     this.textContent = '▼ свернуть';
                     expandedCards.add(id);
+                    if (overlay) overlay.classList.add('hidden');
                 }
             });
+        });
+
+        // === Закрытие развёрнутых карточек при клике мимо ===
+        document.addEventListener('click', function(e) {
+            const openCards = document.querySelectorAll('.answer-card .card-detail.open');
+            if (openCards.length === 0) return;
+            
+            const isClickOnCard = e.target.closest('.answer-card');
+            const isClickOnModal = e.target.closest('.image-modal');
+            const isClickOnBtn = e.target.closest('.expand-btn');
+            const isClickOnAction = e.target.closest('.btn-action');
+            
+            // Не закрываем если клик по модалке, кнопке или действиям
+            if (isClickOnModal || isClickOnBtn || isClickOnAction) return;
+            
+            // Если клик мимо карточки — закрываем все
+            if (!isClickOnCard) {
+                document.querySelectorAll('.card-detail.open').forEach(detail => {
+                    const card = detail.closest('.answer-card');
+                    const id = parseInt(card.dataset.id);
+                    const btn = card.querySelector('.expand-btn');
+                    const overlay = card.querySelector('.click-overlay');
+                    
+                    detail.classList.remove('open');
+                    if (btn) btn.textContent = '▶ развернуть';
+                    if (overlay) overlay.classList.remove('hidden');
+                    expandedCards.delete(id);
+                });
+            }
         });
 
         // === Кнопки действий ===
@@ -870,7 +1120,7 @@
     }
 
     // ============================================================
-    // 8. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+    // 9. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
     // ============================================================
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -882,7 +1132,7 @@
     });
 
     // ============================================================
-    // 9. ЗАПУСК
+    // 10. ЗАПУСК
     // ============================================================
     loadAnswersFromServer();
 
