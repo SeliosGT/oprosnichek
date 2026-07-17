@@ -47,7 +47,7 @@ init_db()
 # НАСТРОЙКА DISCORD БОТА
 # ============================================================
 
-# URL бота на Render (или Railway)
+# URL бота на Render
 DISCORD_BOT_URL = os.environ.get('DISCORD_BOT_URL', '')
 
 def notify_discord_bot(survey_type, answer_data, answer_id, date_str):
@@ -67,7 +67,8 @@ def notify_discord_bot(survey_type, answer_data, answer_id, date_str):
                 'answer_id': answer_id,
                 'date_str': date_str
             },
-            timeout=5
+            timeout=5,
+            headers={'Content-Type': 'application/json'}
         )
         if response.status_code == 200:
             print(f'✅ Уведомление отправлено боту (заявка #{answer_id})')
@@ -75,6 +76,8 @@ def notify_discord_bot(survey_type, answer_data, answer_id, date_str):
             print(f'⚠️ Ошибка отправки боту: {response.status_code} - {response.text}')
     except requests.exceptions.Timeout:
         print(f'⚠️ Таймаут при отправке уведомления боту (заявка #{answer_id})')
+    except requests.exceptions.ConnectionError:
+        print(f'⚠️ Ошибка соединения с ботом (заявка #{answer_id})')
     except Exception as e:
         print(f'⚠️ Ошибка отправки боту: {e}')
 
@@ -107,6 +110,7 @@ def submit_answer():
         return jsonify({"success": True, "id": new_id}), 200
 
     except Exception as e:
+        print(f"❌ Ошибка в /api/submit: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # --- Получение всех ответов (для админки) ---
@@ -139,6 +143,7 @@ def get_answers():
         return jsonify(result), 200
 
     except Exception as e:
+        print(f"❌ Ошибка в /api/answers: {e}")
         return jsonify({"error": str(e)}), 500
 
 # --- Обновление статуса (одобрено/отказано) ---
@@ -158,6 +163,7 @@ def update_status():
         return jsonify({"success": True}), 200
 
     except Exception as e:
+        print(f"❌ Ошибка в /api/update-status: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # --- Обновление рисунка ---
@@ -193,6 +199,7 @@ def update_drawing():
         return jsonify({"success": True}), 200
 
     except Exception as e:
+        print(f"❌ Ошибка в /api/update-drawing: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # --- Удаление всех ответов (для очистки) ---
@@ -207,6 +214,7 @@ def clear_all():
         return jsonify({"success": True}), 200
 
     except Exception as e:
+        print(f"❌ Ошибка в /api/clear-all: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # ============================================================
