@@ -38,6 +38,9 @@
             --btn-reject: #fee9e7;
             --btn-reject-hover: #fecaca;
             --btn-reject-text: #a13026;
+            --btn-delete: #fee9e7;
+            --btn-delete-hover: #fecaca;
+            --btn-delete-text: #a13026;
             --tab-bg: rgba(255,255,255,0.5);
             --tab-active: #0b1a2e;
             --tab-text: #4a5e78;
@@ -80,6 +83,9 @@
             --btn-reject: rgba(220,38,38,0.2);
             --btn-reject-hover: rgba(220,38,38,0.35);
             --btn-reject-text: #f87171;
+            --btn-delete: rgba(220,38,38,0.15);
+            --btn-delete-hover: rgba(220,38,38,0.3);
+            --btn-delete-text: #f87171;
             --tab-bg: rgba(255,255,255,0.04);
             --tab-active: #2563eb;
             --tab-text: #9aafc8;
@@ -270,17 +276,6 @@
             color: var(--text-secondary);
             letter-spacing: 0.3px;
             animation: pulse 1.5s ease-in-out infinite;
-        }
-        .loading-text .dots::after {
-            content: '';
-            animation: dots 1.5s steps(4) infinite;
-        }
-        @keyframes dots {
-            0% { content: ''; }
-            25% { content: '.'; }
-            50% { content: '..'; }
-            75% { content: '...'; }
-            100% { content: ''; }
         }
         @keyframes pulse {
             0%, 100% { opacity: 0.6; }
@@ -590,23 +585,23 @@
            ============================================================ */
         .action-buttons {
             display: flex;
-            gap: 0.8rem;
+            gap: 0.5rem;
             margin-top: 0.8rem;
             padding-top: 0.8rem;
             border-top: 1px solid var(--border-color);
             flex-wrap: wrap;
         }
         .btn-action {
-            padding: 0.4rem 1.2rem;
+            padding: 0.35rem 1rem;
             border: none;
             border-radius: 40px;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.3rem;
         }
         .btn-action.approve {
             background: var(--btn-approve);
@@ -618,6 +613,11 @@
             color: var(--btn-reject-text);
         }
         .btn-action.reject:hover { background: var(--btn-reject-hover); }
+        .btn-action.delete {
+            background: var(--btn-delete);
+            color: var(--btn-delete-text);
+        }
+        .btn-action.delete:hover { background: var(--btn-delete-hover); }
         .btn-action:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -685,6 +685,13 @@
             .image-modal .modal-content img {
                 max-width: 96vw;
                 max-height: 80vh;
+            }
+            .action-buttons {
+                gap: 0.3rem;
+            }
+            .btn-action {
+                font-size: 0.65rem;
+                padding: 0.25rem 0.7rem;
             }
         }
     </style>
@@ -781,7 +788,6 @@
         document.body.style.overflow = '';
     }
 
-    // Закрытие по Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeImageModal();
@@ -813,7 +819,7 @@
                     <div class="ring"></div>
                     <div class="ring"></div>
                 </div>
-                <div class="loading-text">Загрузка<span class="dots"></span></div>
+                <div class="loading-text">Загрузка...</div>
             </div>
         `;
     }
@@ -850,27 +856,59 @@
     }
 
     // ============================================================
-    // 6. ПАРОЛЬ НА ОЧИСТКУ
+    // 6. ПАРОЛЬ НА ОЧИСТКУ И УДАЛЕНИЕ
     // ============================================================
-    document.getElementById('clearBtn').addEventListener('click', function() {
-        const password = prompt('🔒 Введите пароль для очистки всех заявок:');
-        if (password === '54321') {
-            if (confirm('⚠️ Удалить все ответы навсегда?')) {
-                fetch('/api/clear-all', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                .then(() => {
-                    loadAnswersFromServer();
-                })
-                .catch(() => {
-                    alert('❌ Ошибка при очистке!');
-                });
-            }
-        } else if (password !== null) {
+    const ADMIN_PASSWORD = '54321';
+
+    function verifyPassword() {
+        const password = prompt('🔒 Введите пароль для подтверждения:');
+        if (password === null) return false;
+        if (password !== ADMIN_PASSWORD) {
             alert('❌ Неверный пароль!');
+            return false;
         }
+        return true;
+    }
+
+    // === Очистка всех ===
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        if (!verifyPassword()) return;
+        if (!confirm('⚠️ Удалить все ответы навсегда?')) return;
+        
+        fetch('/api/clear-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(() => {
+            loadAnswersFromServer();
+        })
+        .catch(() => {
+            alert('❌ Ошибка при очистке!');
+        });
     });
+
+    // === Удаление одной заявки ===
+    function deleteAnswer(id) {
+        if (!verifyPassword()) return;
+        if (!confirm(`⚠️ Удалить заявку #${id} навсегда?`)) return;
+        
+        fetch('/api/delete-answer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadAnswersFromServer();
+            } else {
+                alert('❌ Ошибка при удалении: ' + (data.error || 'неизвестная'));
+            }
+        })
+        .catch(() => {
+            alert('❌ Ошибка соединения с сервером!');
+        });
+    }
 
     // ============================================================
     // 7. ОБНОВЛЕНИЕ СТАТУСА
@@ -1027,6 +1065,7 @@
                         <div class="action-buttons">
                             <button class="btn-action approve" data-id="${item.id}" ${item.status === 'approved' ? 'disabled' : ''}>✅ Одобрено</button>
                             <button class="btn-action reject" data-id="${item.id}" ${item.status === 'rejected' ? 'disabled' : ''}>❌ Отказано</button>
+                            <button class="btn-action delete" data-id="${item.id}">🗑️ Удалить</button>
                         </div>
                     </div>
                 </div>
@@ -1086,10 +1125,8 @@
             const isClickOnBtn = e.target.closest('.expand-btn');
             const isClickOnAction = e.target.closest('.btn-action');
             
-            // Не закрываем если клик по модалке, кнопке или действиям
             if (isClickOnModal || isClickOnBtn || isClickOnAction) return;
             
-            // Если клик мимо карточки — закрываем все
             if (!isClickOnCard) {
                 document.querySelectorAll('.card-detail.open').forEach(detail => {
                     const card = detail.closest('.answer-card');
@@ -1110,10 +1147,13 @@
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const id = parseInt(this.dataset.id);
+                
                 if (this.classList.contains('approve')) {
                     updateStatus(id, 'approved');
-                } else {
+                } else if (this.classList.contains('reject')) {
                     updateStatus(id, 'rejected');
+                } else if (this.classList.contains('delete')) {
+                    deleteAnswer(id);
                 }
             });
         });
