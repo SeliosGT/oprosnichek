@@ -47,7 +47,6 @@ init_db()
 # НАСТРОЙКА DISCORD БОТА
 # ============================================================
 
-# URL бота на Render
 DISCORD_BOT_URL = os.environ.get('DISCORD_BOT_URL', '')
 
 def notify_discord_bot(survey_type, answer_data, answer_id, date_str):
@@ -200,6 +199,30 @@ def update_drawing():
 
     except Exception as e:
         print(f"❌ Ошибка в /api/update-drawing: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# --- Удаление одной заявки ---
+@app.route('/api/delete-answer', methods=['POST'])
+def delete_answer():
+    try:
+        data = request.json
+        answer_id = data.get('id')
+
+        if not answer_id:
+            return jsonify({"success": False, "error": "ID не указан"}), 400
+
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM answers WHERE id = %s", (answer_id,))
+            if cur.rowcount == 0:
+                return jsonify({"success": False, "error": "Запись не найдена"}), 404
+            conn.commit()
+        conn.close()
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        print(f"❌ Ошибка в /api/delete-answer: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # --- Удаление всех ответов (для очистки) ---
